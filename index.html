@@ -143,10 +143,27 @@
         .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 6px; }
         .player-card {
             background: white; border: 1px solid #e8f5e9; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: all 0.3s;
         }
-        .player-card.highlight { background-color: var(--veggie-yellow); border-color: var(--veggie-yellow-border); }
+        .player-card.highlight { background-color: var(--veggie-yellow) !important; border-color: var(--veggie-yellow-border) !important; }
         .player-card.left-away { background-color: #eee !important; border-color: #ccc !important; opacity: 0.6; }
-        .player-card.left-away .player-name { color: #777 !important; text-decoration: line-through; }
+        .player-card.left-away .player-name span { color: #777 !important; text-decoration: line-through; }
+
+        /* 純時間文字變色樣式 */
+        .idle-time-text { transition: color 0.3s; cursor: pointer; }
+        .time-blue { color: #1565c0 !important; font-weight: 800 !important; }
+        .time-red { color: #c62828 !important; font-weight: 800 !important; }
+
+        .clickable-tag {
+            cursor: pointer;
+            padding: 1px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .clickable-tag:hover {
+            background-color: rgba(0,0,0,0.05);
+            text-decoration: underline;
+        }
 
         .player-name { font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
         .player-badge { font-size: 0.62rem; background: #e8f5e9; color: var(--primary-green); padding: 1px 3px; border-radius: 3px; font-weight: bold; }
@@ -281,7 +298,11 @@
         <div class="section">
             <div class="section-title">
                 <span>👥 等待休息區</span>
-                <span style="font-size:0.72rem; font-weight:normal; background:#fff9c4; color:#f57f17; padding:1px 4px; border-radius:4px; border:1px solid #fbc02d;">🟨 優先上場</span>
+                <div style="display:flex; gap:4px; font-size:0.7rem; font-weight:bold;">
+                    <span style="background:#fff9c4; color:#f57f17; padding:1px 4px; border-radius:4px; border:1px solid #fbc02d;">🟨 優先上場</span>
+                    <span id="tagBlueTime" class="clickable-tag" style="color:#1565c0;" onclick="changeWaitTime('blue')" title="點擊修改時間">⏱️ >4分藍</span>
+                    <span id="tagRedTime" class="clickable-tag" style="color:#c62828;" onclick="changeWaitTime('red')" title="點擊修改時間">⏱️ >7分紅</span>
+                </div>
             </div>
             
             <div class="gender-section-title title-female">👩 女生休息區</div>
@@ -433,6 +454,8 @@
             courtCount: 3,
             courtNames: { 1: "場地 1", 2: "場地 2", 3: "場地 3", 4: "場地 4", 5: "場地 5", 6: "場地 6", 7: "場地 7", 8: "場地 8" },
             feePerPerson: 300,
+            waitBlueMin: 4, // 藍色警示分鐘數
+            waitRedMin: 7,  // 紅色警示分鐘數
             dbPlayers: [],
             players: [],
             courts: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [] },
@@ -472,7 +495,26 @@
             }
         }
 
-        /* 台灣口語風格英文拼音轉換：符合台灣人平時唸英文名字的口語習慣 */
+        /* 點擊修改等待警示時間 */
+        function changeWaitTime(type) {
+            if (type === 'blue') {
+                const val = prompt("請輸入【藍色警示】的等待分鐘數：", state.waitBlueMin || 4);
+                if (val !== null && !isNaN(parseInt(val))) {
+                    state.waitBlueMin = Math.max(1, parseInt(val));
+                    saveData();
+                    renderWaitingList();
+                }
+            } else if (type === 'red') {
+                const val = prompt("請輸入【紅色警示】的等待分鐘數：", state.waitRedMin || 7);
+                if (val !== null && !isNaN(parseInt(val))) {
+                    state.waitRedMin = Math.max(1, parseInt(val));
+                    saveData();
+                    renderWaitingList();
+                }
+            }
+        }
+
+        /* 台灣口語風格英文拼音轉換 */
         function convertEnglishToPhonics(text) {
             if (!text) return '';
             
@@ -546,7 +588,7 @@
             });
         }
 
-        /* 播放真實「叮咚」音效 (Web Audio API 雙音階正弦波) */
+        /* 播放真實「叮咚」音效 (Web Audio API) */
         function playDingDongSound(callback) {
             try {
                 if (!audioCtx) {
@@ -558,7 +600,6 @@
 
                 const now = audioCtx.currentTime;
 
-                // 第一聲「叮」(高音 E6 ~ 1318Hz)
                 const osc1 = audioCtx.createOscillator();
                 const gain1 = audioCtx.createGain();
                 osc1.type = 'sine';
@@ -570,7 +611,6 @@
                 osc1.start(now);
                 osc1.stop(now + 0.5);
 
-                // 第二聲「咚」(次高音 C6 ~ 1046Hz，延遲 0.22 秒)
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
                 osc2.type = 'sine';
@@ -591,7 +631,7 @@
             }
         }
 
-        /* 優先抓取雅婷或台灣本地女聲音色（適用於手機與電腦） */
+        /* 優先抓取雅婷或台灣本地女聲音色 */
         function getYatingOrBestVoice() {
             if (!availableVoices || availableVoices.length === 0) {
                 if ('speechSynthesis' in window) availableVoices = window.speechSynthesis.getVoices();
@@ -657,6 +697,8 @@
                     document.getElementById('locationInput').value = state.location || "";
                     document.getElementById('courtCountSelect').value = state.courtCount || 3;
                     document.getElementById('feePerPerson').value = state.feePerPerson !== undefined ? state.feePerPerson : 300;
+                    if (!state.waitBlueMin) state.waitBlueMin = 4;
+                    if (!state.waitRedMin) state.waitRedMin = 7;
                     if (!state.courtNames) state.courtNames = {};
                     if (!state.courts) state.courts = {};
                     for (let i = 1; i <= 8; i++) {
@@ -1040,7 +1082,7 @@
             }
         }
 
-        /* 統一廣播函數：叮咚 + 現在請 xx、xx、xx、xx 上場打球 */
+        /* 統一廣播函數 */
         function speakPlayers(playerObjects) {
             if (!playerObjects || playerObjects.length === 0) return;
 
@@ -1074,7 +1116,7 @@
             });
         }
 
-        /* 球場現況區廣播：針對該場地的球員進行廣播 */
+        /* 球場現況區廣播 */
         function announceCourt(courtNum) {
             const courtPlayers = (state.courts[courtNum] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
             if (courtPlayers.length === 0) {
@@ -1084,7 +1126,7 @@
             speakPlayers(courtPlayers);
         }
 
-        /* 按下「上場」按鈕：移動球員 + 廣播球員 */
+        /* 按下「上場」按鈕 */
         function sendPreQueueToCourt(qIndex, courtNum) {
             if ((state.preQueues[qIndex] || []).length < 4) {
                 alert("預排隊伍需滿 4 人才能上場！");
@@ -1097,10 +1139,8 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            // 1. 執行語音廣播
             speakPlayers(queuePlayers);
 
-            // 2. 將球員移入目標場地，並更新狀態
             state.courts[courtNum] = [...state.preQueues[qIndex]];
             state.preQueues[qIndex].forEach(id => {
                 const p = state.players.find(x => x.id === id);
@@ -1110,7 +1150,6 @@
                 }
             });
 
-            // 3. 清空該預排隊伍
             state.preQueues[qIndex] = [];
             saveData();
             render();
@@ -1157,8 +1196,12 @@
             render();
         }
 
+        /* 每秒更新等待時間與動態分鐘數計算 */
         function updateIdleTimes() {
             const now = Date.now();
+            const blueSec = (state.waitBlueMin || 4) * 60;
+            const redSec = (state.waitRedMin || 7) * 60;
+
             state.players.forEach(p => {
                 if (p.checkedIn && p.status === 'idle' && p.lastPlayedTime) {
                     const diffSec = Math.floor((now - p.lastPlayedTime) / 1000);
@@ -1167,7 +1210,15 @@
                     const timeText = `${String(mins).padStart(2, '0')}分${String(secs).padStart(2, '0')}秒`;
                     
                     const el = document.getElementById(`idleTime-${p.id}`);
-                    if (el) el.innerText = timeText;
+                    if (el) {
+                        el.innerText = timeText;
+                        el.classList.remove('time-blue', 'time-red');
+                        if (diffSec >= redSec) {
+                            el.classList.add('time-red');
+                        } else if (diffSec >= blueSec) {
+                            el.classList.add('time-blue');
+                        }
+                    }
                 }
             });
         }
@@ -1266,6 +1317,12 @@
             const unknownContainer = document.getElementById('waitingListUnknown');
             const leftContainer = document.getElementById('waitingListLeft');
 
+            // 更新頂部標籤顯示分鐘數
+            const blueTag = document.getElementById('tagBlueTime');
+            const redTag = document.getElementById('tagRedTime');
+            if (blueTag) blueTag.innerText = `⏱️ >${state.waitBlueMin || 4}分藍`;
+            if (redTag) redTag.innerText = `⏱️ >${state.waitRedMin || 7}分紅`;
+
             femaleContainer.innerHTML = '';
             maleContainer.innerHTML = '';
             unknownContainer.innerHTML = '';
@@ -1274,12 +1331,15 @@
             const activeIdlePlayers = state.players.filter(p => p.checkedIn && p.status === 'idle');
             const minCount = activeIdlePlayers.length > 0 ? Math.min(...activeIdlePlayers.map(p => p.count)) : -1;
 
+            const blueSec = (state.waitBlueMin || 4) * 60;
+            const redSec = (state.waitRedMin || 7) * 60;
+
             state.players.forEach(p => {
                 if (!p.checkedIn) return;
 
                 if (p.status === 'left') {
                     leftContainer.innerHTML += `
-                        <div class="player-card left-away">
+                        <div class="player-card left-away" id="playerCard-${p.id}">
                             <div class="player-name">
                                 <span class="${p.gender === '女' ? 'name-female' : (p.gender === '男' ? 'name-male' : 'name-unknown')}">${p.name}</span>
                                 <button class="btn btn-secondary btn-sm" onclick="toggleLeftStatus('${p.id}')">返回</button>
@@ -1299,6 +1359,13 @@
                 const secs = diffSec % 60;
                 const timeText = `${String(mins).padStart(2, '0')}分${String(secs).padStart(2, '0')}秒`;
 
+                let timeColorClass = '';
+                if (diffSec >= redSec) {
+                    timeColorClass = 'time-red';
+                } else if (diffSec >= blueSec) {
+                    timeColorClass = 'time-blue';
+                }
+
                 let qBtns = '';
                 for (let q = 1; q <= 3; q++) {
                     const isQueueFull = (state.preQueues[q] || []).length >= 4;
@@ -1312,14 +1379,14 @@
                 else if (p.gender === '?') nameClass = 'name-unknown';
 
                 const cardHTML = `
-                    <div class="player-card ${isHighlight ? 'highlight' : ''}">
+                    <div class="player-card ${isHighlight ? 'highlight' : ''}" id="playerCard-${p.id}">
                         <div>
                             <div class="player-name">
                                 <span class="${nameClass}">${p.name}</span>
                                 <span class="player-badge">${p.level || '?'}</span>
                             </div>
                             <div class="player-info">
-                                場次: <b>${p.count}</b> | 等待: <span id="idleTime-${p.id}">${timeText}</span>
+                                場次: <b>${p.count}</b> | 等待: <span id="idleTime-${p.id}" class="idle-time-text ${timeColorClass}">${timeText}</span>
                             </div>
                         </div>
                         <div>
