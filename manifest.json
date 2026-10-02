@@ -2,19 +2,19 @@
   "name": "蔬食羽球智慧排場系統",
   "short_name": "羽球排場",
   "description": "提供羽球場地預排、球員等級與歷史對戰紀錄之智慧管理系統",
-  "start_url": "./index.html",
+  "start_url": "/Test-Badminton-courts/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1b5e20",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/Test-Badminton-courts/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/Test-Badminton-courts/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
