@@ -1,22 +1,22 @@
 {
-  "id": "/Test-Badminton-courts/",
+  "id": "https://a22591260-ux.github.io/Test-Badminton-courts/",
   "name": "蔬食羽球智慧排場系統",
   "short_name": "羽球排場",
   "description": "提供羽球場地預排、球員等級與歷史對戰紀錄之智慧管理系統",
-  "start_url": "/Test-Badminton-courts/index.html",
-  "scope": "/Test-Badminton-courts/",
+  "start_url": "https://a22591260-ux.github.io/Test-Badminton-courts/index.html",
+  "scope": "https://a22591260-ux.github.io/Test-Badminton-courts/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#1b5e20",
   "icons": [
     {
-      "src": "/Test-Badminton-courts/icon-192.png",
+      "src": "https://a22591260-ux.github.io/Test-Badminton-courts/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/Test-Badminton-courts/icon-512.png",
+      "src": "https://a22591260-ux.github.io/Test-Badminton-courts/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
