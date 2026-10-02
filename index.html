@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>蔬食羽球 智慧排場助手</title>
     <!-- PWA 設定連結 -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1b5e20">
-<link rel="apple-touch-icon" href="icon-512.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1b5e20">
+    <link rel="apple-touch-icon" href="icon-512.png">
 
-<!-- 註冊 Service Worker -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('Service Worker 註冊成功:', reg.scope))
-        .catch(err => console.error('Service Worker 註冊失敗:', err));
-    });
-  }
-</script>
+    <!-- 註冊 Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker 註冊成功:', reg.scope))
+            .catch(err => console.error('Service Worker 註冊失敗:', err));
+        });
+      }
+    </script>
     <style>
         :root {
             --bg-color: #f4f7f4;
@@ -202,6 +202,10 @@
                         <option value="2">2 個</option>
                         <option value="3" selected>3 個</option>
                         <option value="4">4 個</option>
+                        <option value="5">5 個</option>
+                        <option value="6">6 個</option>
+                        <option value="7">7 個</option>
+                        <option value="8">8 個</option>
                     </select>
                 </div>
             </div>
@@ -427,11 +431,11 @@
             currentDate: new Date().toISOString().slice(0, 10),
             location: "",
             courtCount: 3,
-            courtNames: { 1: "場地 1", 2: "場地 2", 3: "場地 3", 4: "場地 4" },
+            courtNames: { 1: "場地 1", 2: "場地 2", 3: "場地 3", 4: "場地 4", 5: "場地 5", 6: "場地 6", 7: "場地 7", 8: "場地 8" },
             feePerPerson: 300,
             dbPlayers: [],
             players: [],
-            courts: { 1: [], 2: [], 3: [], 4: [] },
+            courts: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [] },
             preQueues: { 1: [], 2: [], 3: [] },
             logs: [],
             dailySummaries: {} 
@@ -653,6 +657,12 @@
                     document.getElementById('locationInput').value = state.location || "";
                     document.getElementById('courtCountSelect').value = state.courtCount || 3;
                     document.getElementById('feePerPerson').value = state.feePerPerson !== undefined ? state.feePerPerson : 300;
+                    if (!state.courtNames) state.courtNames = {};
+                    if (!state.courts) state.courts = {};
+                    for (let i = 1; i <= 8; i++) {
+                        if (!state.courtNames[i]) state.courtNames[i] = `場地 ${i}`;
+                        if (!state.courts[i]) state.courts[i] = [];
+                    }
                 } catch(e) { console.error(e); }
             }
         }
@@ -1087,7 +1097,7 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            // 1. 執行語音廣播（不包含場地名稱）
+            // 1. 執行語音廣播
             speakPlayers(queuePlayers);
 
             // 2. 將球員移入目標場地，並更新狀態
