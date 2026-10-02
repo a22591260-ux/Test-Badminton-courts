@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>蔬食羽球 智慧排場助手</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f4;
+            --primary-green: #2e7d32;
+            --court-green: #1b5e20;
+            --veggie-yellow: #fff9c4;
+            --veggie-yellow-border: #fbc02d;
+            --dark-card: #ffffff;
+            --text-dark: #1b2e1b;
+            --text-muted: #667e66;
+            --shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+            
+            --male-color: #1565c0;
+            --female-color: #c2185b;
+            --unknown-color: #f57c00;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); padding: 10px; padding-bottom: 60px; }
+
+        /* Header & Navigation Tabs */
+        .app-header {
+            background: linear-gradient(135deg, #1b5e20 0%, #388e3c 100%);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .app-title { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+
+        .nav-tabs {
+            display: flex;
+            background: #1b5e20;
+            border-radius: 0 0 14px 14px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: rgba(0, 0, 0, 0.2);
+            color: #c8e6c9;
+            font-weight: bold;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .tab-btn.active { background: #ffffff; color: var(--primary-green); }
+
+        /* Cards & Sections */
+        .section {
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e8f5e9;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input, select, button, textarea {
+            padding: 6px 8px; border-radius: 8px; border: 1.5px solid #c8e6c9; font-size: 0.82rem; outline: none;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary-green); }
+
+        .btn { border: none; font-weight: 700; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-primary { background: linear-gradient(135deg, #2e7d32, #43a047); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #e53935, #d32f2f); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #ff9800, #f57c00); color: white; }
+        .btn-secondary { background: #e0e0e0; color: #424242; }
+        .btn-sm { font-size: 0.75rem; padding: 3px 6px; }
+
+        .btn-court { 
+            background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; 
+            padding: 5px; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; border-radius: 4px; cursor: pointer;
+        }
+        .btn-court:hover { background: #c8e6c9; }
+
+        /* Gender Colors */
+        .name-male { color: var(--male-color) !important; font-weight: 800; }
+        .name-female { color: var(--female-color) !important; font-weight: 800; }
+        .name-unknown { color: var(--unknown-color) !important; font-weight: 800; }
+
+        /* Courts Area */
+        .court-card {
+            background: #f1f8e9; border: 1.5px solid #81c784; border-radius: 10px; padding: 8px; margin-bottom: 8px;
+        }
+        .court-title { font-weight: 800; color: #1b5e20; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; }
+        
+        .player-chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 32px; background: #ffffff; padding: 4px; border-radius: 8px; border: 1px dashed #a5d6a7; align-items: center; }
+        .chip {
+            background: #e8f5e9; padding: 2px 6px; border-radius: 14px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; border: 1px solid #c8e6c9; cursor: pointer;
+        }
+        .chip-playing { background: #c8e6c9; border-color: #81c784; cursor: default; }
+
+        .pre-queue-compact {
+            background: #ffffff; border: 1px solid #a5d6a7; border-radius: 8px; padding: 6px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .pre-queue-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: bold; }
+
+        /* Waiting Area Grid */
+        .gender-section-title {
+            font-size: 0.8rem; font-weight: bold; padding: 3px 6px; border-radius: 4px; margin: 6px 0 4px 0; display: inline-block;
+        }
+        .title-male { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+        .title-female { background: #fce4ec; color: #c2185b; border: 1px solid #f48fb1; }
+        .title-unknown { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+
+        .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 6px; }
+        .player-card {
+            background: white; border: 1px solid #e8f5e9; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .player-card.highlight { background-color: var(--veggie-yellow); border-color: var(--veggie-yellow-border); }
+        .player-card.left-away { background-color: #eee !important; border-color: #ccc !important; opacity: 0.6; }
+        .player-card.left-away .player-name { color: #777 !important; text-decoration: line-through; }
+
+        .player-name { font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+        .player-badge { font-size: 0.62rem; background: #e8f5e9; color: var(--primary-green); padding: 1px 3px; border-radius: 3px; font-weight: bold; }
+        .player-info { font-size: 0.7rem; color: var(--text-muted); margin: 1px 0; }
+        .pay-tag { font-size: 0.62rem; padding: 1px 3px; border-radius: 3px; font-weight: bold; cursor: pointer; }
+        .pay-paid { background: #e8f5e9; color: #2e7d32; }
+        .pay-unpaid { background: #ffebee; color: #c62828; }
+        
+        .court-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 4px; }
+
+        /* Tables & Summary */
+        .manage-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.8rem; }
+        .manage-table th, .manage-table td { border-bottom: 1px solid #e8f5e9; padding: 5px 3px; text-align: left; }
+        .manage-table th { color: var(--primary-green); font-weight: bold; }
+
+        .summary-box { background: #ffffff; border: 1.5px solid #a5d6a7; border-radius: 10px; padding: 8px; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; }
+        .log-list { font-size: 0.78rem; color: #444; max-height: 250px; overflow-y: auto; background: #f9fbf9; padding: 8px; border-radius: 8px; border: 1px solid #e8f5e9; }
+        .log-item { border-bottom: 1px dashed #c8e6c9; padding: 4px 0; }
+
+        .btn-note { font-size: 0.68rem; color: #d32f2f; font-weight: normal; margin-left: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="app-header">
+        <div class="app-title">🥬🏸 蔬食羽球智慧排場</div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:white;" onclick="toggleInputSection()">⚙️ 簽到管理</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="tabMainBtn" onclick="switchPage('main')">🏸 主排場頁</button>
+        <button class="tab-btn" id="tabDbBtn" onclick="switchPage('db')">🗃️ 球員資料庫</button>
+        <button class="tab-btn" id="tabHistoryBtn" onclick="switchPage('history')">📊 歷史與紀錄</button>
+    </div>
+
+    <!-- ==================== 頁面一：主功能頁 ==================== -->
+    <div id="pageMain">
+        <!-- 日期、地點與場地設定 -->
+        <div class="section">
+            <div style="display: flex; flex-direction:column; gap:6px;">
+                <div style="display: flex; gap:6px; align-items:center;">
+                    <label style="white-space:nowrap; font-size:0.8rem; font-weight:bold; color:var(--primary-green);">📅 日期：</label>
+                    <input type="date" id="currentDateInput" style="flex:1; font-weight:bold;" onchange="saveData(); syncDailySummarySnapshot(); renderHistory();">
+                </div>
+                <div style="display: flex; gap:6px; align-items:center;">
+                    <label style="white-space:nowrap; font-size:0.8rem; font-weight:bold; color:var(--primary-green);">📍 地點：</label>
+                    <input type="text" id="locationInput" placeholder="例: 奧創土城館" style="flex:1;" onchange="saveData()">
+                    <label style="white-space:nowrap; font-size:0.8rem; font-weight:bold; color:var(--primary-green);">🏟️ 場地數：</label>
+                    <select id="courtCountSelect" onchange="changeCourtCount()" style="font-weight:bold;">
+                        <option value="1">1 個</option>
+                        <option value="2">2 個</option>
+                        <option value="3" selected>3 個</option>
+                        <option value="4">4 個</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 簽到與繳費 Drawer -->
+        <div id="inputSection" class="section" style="display:none; background:#f1f8e9;">
+            <div class="section-title">
+                <span>📋 批次匯入當天名單</span>
+                <span style="font-size:0.72rem; color:#666; font-weight:normal;">自動淨化姓名(忽略性別/級數)</span>
+            </div>
+            <textarea id="batchNameInput" rows="2" placeholder="貼上名單，例如：&#10;9.閔惇 男6級&#10;.姵彤 女5級" style="width:100%; margin-bottom:6px; resize:none;"></textarea>
+            <div style="display:flex; gap:6px; justify-content:space-between; margin-bottom:6px;">
+                <button class="btn btn-primary" style="flex:1;" onclick="addBatchPlayers()">✨ 匯入名單</button>
+                <button class="btn btn-danger btn-sm" onclick="resetTodayData()">⚠️ 清空今日排場(獨立不影響歷史)</button>
+            </div>
+
+            <!-- 明細 -->
+            <button class="btn btn-secondary btn-sm" style="width:100%; font-weight:bold; justify-content:space-between;" onclick="toggleManageTable()">
+                <span>👥 簽到與繳費明細</span>
+                <span id="manageTableArrow">▼</span>
+            </button>
+            
+            <div id="manageTableWrapper" style="display:none; overflow-x:auto;">
+                <div class="summary-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; color:var(--primary-green);">💰 標準費用/人：</span>
+                        <div style="display:flex; align-items:center; gap:2px;">
+                            <input type="number" id="feePerPerson" value="300" style="width:60px; text-align:right; font-weight:bold;" onchange="saveData(); render();">
+                            <span style="font-size:0.75rem;">元</span>
+                        </div>
+                    </div>
+                    <!-- 即時統計已繳費總金額 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                        <span style="font-weight:bold; color:#1565c0;">💵 已繳費總金額：</span>
+                        <b id="livePaidTotalDisplay" style="color:#2e7d32; font-size:0.95rem;">0 元</b>
+                    </div>
+                </div>
+
+                <table class="manage-table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>性別</th>
+                            <th>簽到</th>
+                            <th>繳費</th>
+                            <th>折抵</th>
+                            <th>備註</th>
+                            <th>刪</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playerManageList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 第一區：球場對戰現況 -->
+        <div class="section">
+            <div class="section-title">🎾 場地現況</div>
+            <div id="courtsContainer"></div>
+        </div>
+
+        <!-- 第二區：緊湊彈性預排區 (3隊) -->
+        <div class="section">
+            <div class="section-title">
+                <span>📋 彈性預排隊伍</span>
+                <span style="font-size:0.72rem; color:#666; font-weight:normal;">預排後點選「上場」即自動語音播報</span>
+            </div>
+            <div id="preQueuesContainer"></div>
+        </div>
+
+        <!-- 第三區：等待休息區 -->
+        <div class="section">
+            <div class="section-title">
+                <span>👥 等待休息區</span>
+                <span style="font-size:0.72rem; font-weight:normal; background:#fff9c4; color:#f57f17; padding:1px 4px; border-radius:4px; border:1px solid #fbc02d;">🟨 優先上場</span>
+            </div>
+            
+            <div class="gender-section-title title-female">👩 女生休息區</div>
+            <div id="waitingListFemale" class="player-grid"></div>
+
+            <div class="gender-section-title title-male" style="margin-top:8px;">👨 男生休息區</div>
+            <div id="waitingListMale" class="player-grid"></div>
+
+            <div class="gender-section-title title-unknown" style="margin-top:8px;">❓ 待補資料 (DB無資料)</div>
+            <div id="waitingListUnknown" class="player-grid"></div>
+
+            <div style="margin-top:8px; font-size:0.75rem; color:#888; font-weight:bold;">👋 離場/暫離人員：</div>
+            <div id="waitingListLeft" class="player-grid" style="margin-top:3px;"></div>
+        </div>
+    </div>
+
+    <!-- ==================== 頁面二：球員資料庫管理 ==================== -->
+    <div id="pageDb" style="display:none;">
+        <div class="section">
+            <div class="section-title"><span id="dbFormTitle">➕ 單筆新增球員</span></div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <input type="text" id="dbNameInput" placeholder="球員姓名">
+                <div style="display:flex; gap:6px;">
+                    <select id="dbGenderInput" style="flex:1;">
+                        <option value="男">👨 男生</option>
+                        <option value="女">👩 女生</option>
+                        <option value="?">❓ 未知</option>
+                    </select>
+                    <select id="dbLevelInput" style="flex:1;">
+                        <option value="?">❓ 待定級數</option>
+                        <option value="1級">1 級 (新手)</option>
+                        <option value="2級">2 級 (新手)</option>
+                        <option value="3級">3 級 (新手)</option>
+                        <option value="4級">4 級 (初階)</option>
+                        <option value="5級">5 級 (初階)</option>
+                        <option value="6級">6 級 (初中階)</option>
+                        <option value="7級">7 級 (初中階)</option>
+                        <option value="8級">8 級 (中階)</option>
+                        <option value="9級">9 級 (中階)</option>
+                        <option value="10級">10 級 (中進階)</option>
+                        <option value="11級">11 級 (中進階)</option>
+                        <option value="12級">12 級 (中進階)</option>
+                        <option value="13級">13 級 (高階)</option>
+                        <option value="14級">14 級 (高階)</option>
+                        <option value="15級">15 級 (高階)</option>
+                        <option value="16級">16 級 (職業級)</option>
+                        <option value="17級">17 級 (職業級)</option>
+                        <option value="18級">18 級 (職業級)</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-primary" style="flex:1;" onclick="addDbPlayer()">💾 儲存球員資料</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="background:#f1f8e9;">
+            <div class="section-title">
+                <span>📥 批次匯入資料庫 (Excel / CSV)</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:0.75rem; color:#555;">
+                    1. <b>匯入 CSV 檔案</b>：
+                </div>
+                <input type="file" id="csvFileInput" accept=".csv" style="font-size:0.75rem; background:white;">
+                <button class="btn btn-primary btn-sm" onclick="importCSVFile()">📂 讀取並匯入 CSV 檔案</button>
+
+                <hr style="border:none; border-top:1px dashed #c8e6c9; margin:4px 0;">
+
+                <div style="font-size:0.75rem; color:#555;">
+                    2. <b>直接複製 Excel 文字貼上</b> (格式: 姓名 性別 級數)：
+                </div>
+                <textarea id="dbBatchPasteInput" rows="3" placeholder="例如貼上：&#10;.姵彤 女 5級&#10;1. 小胖 男 8級" style="width:100%; resize:none;"></textarea>
+                <button class="btn btn-primary btn-sm" onclick="importPastedText()">✨ 貼上資料匯入</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                <span>🗃️ 球員資料庫名單</span>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <button class="btn btn-primary btn-sm" onclick="exportDbCSV()">📤 匯出資料庫 CSV 檔</button>
+                    <div style="text-align:right;">
+                        <button class="btn btn-danger btn-sm" onclick="clearDb()">🔒 清空資料庫</button>
+                        <div class="btn-note">(清除密碼：1234)</div>
+                    </div>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="manage-table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>性別</th>
+                            <th>羽球級數</th>
+                            <th>刪除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbPlayerList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 頁面三：歷史紀錄與統計 ==================== -->
+    <div id="pageHistory" style="display:none;">
+        <div class="section">
+            <div class="section-title">
+                <span>📊 歷史營運統計</span>
+                <div style="text-align:right;">
+                    <button class="btn btn-danger btn-sm" onclick="clearHistoryLogs()">🔒 清空歷史紀錄</button>
+                    <div class="btn-note">(清除密碼：1234)</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+                <label style="font-size:0.8rem; font-weight:bold; color:var(--primary-green); white-space:nowrap;">📅 選擇結算日期：</label>
+                <select id="historyDateSelect" onchange="renderHistory()" style="flex:1; font-weight:bold;"></select>
+            </div>
+
+            <div class="summary-box">
+                <div style="display:flex; justify-content:space-between;">
+                    <span>🏸 完成對戰場次：</span><b id="statTotalMatches" style="color:var(--primary-green);">0 場</b>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>👥 該日簽到人數：</span><b id="statTotalCheckedIn">0 人</b>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>💵 該日實收總金額：</span><b id="statTotalPaid" style="color:#2e7d32; font-size:1rem;">0 元</b>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:6px; margin-top:8px;">
+                <button class="btn btn-primary btn-sm" style="flex:1;" onclick="exportHistoryCSV()">📤 匯出選取日期 CSV 檔</button>
+                <button class="btn btn-secondary btn-sm" style="flex:1; border:1px solid #a5d6a7; background:#e8f5e9; color:#1b5e20;" onclick="document.getElementById('historyCsvFileInput').click()">📥 匯入歷史紀錄 CSV</button>
+                <input type="file" id="historyCsvFileInput" accept=".csv" style="display:none;" onchange="importHistoryCSV(event)">
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📜 歷史對戰紀錄明細</div>
+            <div id="logList" class="log-list">尚無紀錄</div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            currentDate: new Date().toISOString().slice(0, 10),
+            location: "",
+            courtCount: 3,
+            courtNames: { 1: "場地 1", 2: "場地 2", 3: "場地 3", 4: "場地 4" },
+            feePerPerson: 300,
+            dbPlayers: [],
+            players: [],
+            courts: { 1: [], 2: [], 3: [], 4: [] },
+            preQueues: { 1: [], 2: [], 3: [] },
+            logs: [],
+            dailySummaries: {} 
+        };
+
+        let availableVoices = [];
+        let audioCtx = null;
+
+        window.onload = function() {
+            loadData();
+            if (!state.currentDate) {
+                state.currentDate = new Date().toISOString().slice(0, 10);
+            }
+            if (!state.dailySummaries) {
+                state.dailySummaries = {};
+            }
+            document.getElementById('currentDateInput').value = state.currentDate;
+            setInterval(updateIdleTimes, 1000);
+            
+            initSpeechVoices();
+
+            render();
+        };
+
+        function initSpeechVoices() {
+            if ('speechSynthesis' in window) {
+                const loadVoices = () => {
+                    availableVoices = window.speechSynthesis.getVoices();
+                };
+                loadVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = loadVoices;
+                }
+            }
+        }
+
+        /* 台灣口語風格英文拼音轉換：符合台灣人平時唸英文名字的口語習慣 */
+        function convertEnglishToPhonics(text) {
+            if (!text) return '';
+            
+            const taiwanNamesMap = {
+                'nana': '娜娜', 'na': '娜', 'alex': '亞歷', 'ben': '班', 'chris': '克里斯', 'david': '大衛',
+                'eric': '艾瑞克', 'frank': '法蘭克', 'george': '喬治', 'henry': '亨利',
+                'jack': '傑克', 'jerry': '傑瑞', 'jim': '吉姆', 'john': '約翰',
+                'kevin': '凱文', 'leo': '里歐', 'mark': '馬克', 'mike': '麥克',
+                'paul': '保羅', 'peter': '彼得', 'sam': '山姆', 'tom': '湯姆',
+                'tony': '湯尼', 'victor': '維克多', 'amy': '艾米', 'angela': '安琪拉',
+                'anna': '安娜', 'betty': '貝蒂', 'cindy': '辛蒂', 'emily': '艾米莉',
+                'fiona': '菲奧娜', 'grace': '葛瑞絲', 'helen': '海倫', 'iris': '艾莉絲',
+                'ivy': '艾薇', 'jessica': '潔西卡', 'lisa': '麗莎', 'mary': '瑪莉',
+                'nancy': '南西', 'rachel': '瑞秋', 'sarah': '莎拉', 'tina': '蒂娜',
+                'jason': '傑森', 'ken': '肯尼', 'andy': '安迪', 'ray': '阿雷', 'roy': '羅伊'
+            };
+
+            return text.replace(/\b[a-zA-Z]+\b/g, (match) => {
+                const lower = match.toLowerCase();
+                if (taiwanNamesMap[lower]) {
+                    return taiwanNamesMap[lower];
+                }
+                
+                let phonics = lower
+                    .replace(/tion/g, '訊')
+                    .replace(/na/g, '娜')
+                    .replace(/ne/g, '妮')
+                    .replace(/ni/g, '尼')
+                    .replace(/no/g, '諾')
+                    .replace(/nu/g, '努')
+                    .replace(/sh/g, '許')
+                    .replace(/ch/g, '奇')
+                    .replace(/th/g, '斯')
+                    .replace(/ck/g, '克')
+                    .replace(/ph/g, '夫')
+                    .replace(/ee/g, '伊')
+                    .replace(/oo/g, '烏')
+                    .replace(/ay/g, '埃')
+                    .replace(/ea/g, '伊')
+                    .replace(/al/g, '奧')
+                    .replace(/ar/g, '阿')
+                    .replace(/er/g, '爾')
+                    .replace(/or/g, '爾')
+                    .replace(/a/g, '亞')
+                    .replace(/b/g, '布')
+                    .replace(/c/g, '克')
+                    .replace(/d/g, '德')
+                    .replace(/e/g, '艾')
+                    .replace(/f/g, '夫')
+                    .replace(/g/g, '格')
+                    .replace(/h/g, '哈')
+                    .replace(/i/g, '伊')
+                    .replace(/j/g, '傑')
+                    .replace(/k/g, '克')
+                    .replace(/l/g, '勒')
+                    .replace(/m/g, '姆')
+                    .replace(/n/g, '納')
+                    .replace(/o/g, '歐')
+                    .replace(/p/g, '普')
+                    .replace(/q/g, '庫')
+                    .replace(/r/g, '爾')
+                    .replace(/s/g, '斯')
+                    .replace(/t/g, '特')
+                    .replace(/u/g, '優')
+                    .replace(/v/g, '威')
+                    .replace(/w/g, '沃')
+                    .replace(/x/g, '克斯')
+                    .replace(/y/g, '雅')
+                    .replace(/z/g, '茲');
+                return phonics;
+            });
+        }
+
+        /* 播放真實「叮咚」音效 (Web Audio API 雙音階正弦波) */
+        function playDingDongSound(callback) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+
+                // 第一聲「叮」(高音 E6 ~ 1318Hz)
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(1318.51, now);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.5);
+
+                // 第二聲「咚」(次高音 C6 ~ 1046Hz，延遲 0.22 秒)
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1046.50, now + 0.22);
+                gain2.gain.setValueAtTime(0.35, now + 0.22);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start(now + 0.22);
+                osc2.stop(now + 0.9);
+
+                if (callback) {
+                    setTimeout(callback, 650);
+                }
+            } catch(e) {
+                console.error("音效播放失敗，直接切換語音", e);
+                if (callback) callback();
+            }
+        }
+
+        /* 優先抓取雅婷或台灣本地女聲音色（適用於手機與電腦） */
+        function getYatingOrBestVoice() {
+            if (!availableVoices || availableVoices.length === 0) {
+                if ('speechSynthesis' in window) availableVoices = window.speechSynthesis.getVoices();
+            }
+
+            const yatingVoice = availableVoices.find(v => 
+                v.name.includes('Yating') || v.name.includes('雅婷') || v.name.includes('Mei-Jia') || v.name.includes('MeiJia') || v.name.includes('美佳')
+            );
+            if (yatingVoice) return yatingVoice;
+
+            const twVoices = availableVoices.filter(v => v.lang === 'zh-TW' || v.lang === 'zh_TW' || v.lang.startsWith('zh-TW'));
+
+            if (twVoices.length > 0) {
+                const femaleVoice = twVoices.find(v => 
+                    v.name.toLowerCase().includes('female') || 
+                    v.name.includes('HsiaoChen') || 
+                    v.name.includes('Hanhan') || 
+                    v.name.includes('Xiaoxiao') ||
+                    v.name.includes('Natural')
+                );
+                if (femaleVoice) return femaleVoice;
+
+                return twVoices[0];
+            }
+
+            return null;
+        }
+
+        function saveData() {
+            state.currentDate = document.getElementById('currentDateInput').value;
+            state.location = document.getElementById('locationInput').value;
+            state.feePerPerson = parseInt(document.getElementById('feePerPerson').value) || 0;
+            syncDailySummarySnapshot();
+            localStorage.setItem('veggie_badminton_v3_state', JSON.stringify(state));
+        }
+
+        function syncDailySummarySnapshot() {
+            const curDate = document.getElementById('currentDateInput').value || state.currentDate;
+            if (!curDate) return;
+
+            let checkedInCount = 0;
+            let totalPaid = 0;
+
+            state.players.forEach(p => {
+                if (p.checkedIn) checkedInCount++;
+                if (p.isPaid) totalPaid += Math.max(0, state.feePerPerson - (p.discount || 0));
+            });
+
+            if (!state.dailySummaries) state.dailySummaries = {};
+            
+            const prevSummary = state.dailySummaries[curDate] || { checkedInCount: 0, totalPaid: 0 };
+            state.dailySummaries[curDate] = {
+                checkedInCount: Math.max(prevSummary.checkedInCount, checkedInCount),
+                totalPaid: Math.max(prevSummary.totalPaid, totalPaid)
+            };
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('veggie_badminton_v3_state');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                    document.getElementById('locationInput').value = state.location || "";
+                    document.getElementById('courtCountSelect').value = state.courtCount || 3;
+                    document.getElementById('feePerPerson').value = state.feePerPerson !== undefined ? state.feePerPerson : 300;
+                } catch(e) { console.error(e); }
+            }
+        }
+
+        function switchPage(page) {
+            document.getElementById('pageMain').style.display = page === 'main' ? 'block' : 'none';
+            document.getElementById('pageDb').style.display = page === 'db' ? 'block' : 'none';
+            document.getElementById('pageHistory').style.display = page === 'history' ? 'block' : 'none';
+            
+            document.getElementById('tabMainBtn').className = page === 'main' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tabDbBtn').className = page === 'db' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tabHistoryBtn').className = page === 'history' ? 'tab-btn active' : 'tab-btn';
+
+            if (page === 'history') {
+                updateHistoryDateSelect();
+                renderHistory();
+            }
+        }
+
+        function extractOnlyName(raw) {
+            if (!raw) return '';
+            let s = raw.trim();
+            s = s.replace(/^[\.\s、\-_0-9]+/, '').trim();
+            s = s.replace(/[\s\t,、]*(?:[男女]|[\d]+級)+.*$/, '').trim();
+            return s;
+        }
+
+        function cleanName(raw) {
+            if (!raw) return '';
+            return raw.replace(/^[\.\s、\-_0-9]+/, '').trim();
+        }
+
+        function parseLevelText(text) {
+            if (!text) return '?';
+            const numMatch = text.match(/\d+/);
+            if (numMatch) {
+                const val = parseInt(numMatch[0]);
+                if (val >= 1 && val <= 18) return `${val}級`;
+            }
+            if (text.includes('初')) return '4級';
+            if (text.includes('中')) return '8級';
+            if (text.includes('高')) return '13級';
+            return '?';
+        }
+
+        function addDbPlayer() {
+            const rawName = document.getElementById('dbNameInput').value;
+            const name = extractOnlyName(rawName);
+            const gender = document.getElementById('dbGenderInput').value;
+            const level = document.getElementById('dbLevelInput').value;
+
+            if (!name) { alert("請輸入球員姓名！"); return; }
+
+            const existingIndex = state.dbPlayers.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+            if (existingIndex >= 0) {
+                state.dbPlayers[existingIndex] = { name: state.dbPlayers[existingIndex].name, gender, level };
+            } else {
+                state.dbPlayers.push({ name, gender, level });
+            }
+
+            const activePlayer = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (activePlayer) {
+                activePlayer.gender = gender;
+                activePlayer.level = level;
+            }
+
+            document.getElementById('dbNameInput').value = '';
+            saveData();
+            render();
+        }
+
+        function updateDbPlayerField(name, field, val) {
+            const dbP = state.dbPlayers.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (dbP) {
+                dbP[field] = val;
+                const activeP = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+                if (activeP) {
+                    activeP[field] = val;
+                }
+                saveData();
+                render();
+            }
+        }
+
+        function removeDbPlayer(name) {
+            state.dbPlayers = state.dbPlayers.filter(p => p.name.toLowerCase() !== name.toLowerCase());
+            saveData();
+            render();
+        }
+
+        function clearDb() {
+            const pwd = prompt("⚠️ 請輸入清除密碼以確認清空資料庫：");
+            if (pwd === null) return;
+            
+            if (pwd === "1234") {
+                state.dbPlayers = [];
+                saveData();
+                render();
+                alert("已成功清空球員資料庫！");
+            } else {
+                alert("❌ 密碼錯誤，無法清空資料庫！");
+            }
+        }
+
+        function exportDbCSV() {
+            if (!state.dbPlayers || state.dbPlayers.length === 0) {
+                alert("目前資料庫內無球員資料可供匯出！");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "姓名,性別,羽球級數\n";
+
+            state.dbPlayers.forEach(p => {
+                csvContent += `"${p.name}","${p.gender}","${p.level}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            const todayStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute("download", `badminton_players_db_${todayStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importCSVFile() {
+            const fileInput = document.getElementById('csvFileInput');
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 CSV 檔案！"); return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseCSVToDb(e.target.result);
+                fileInput.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function parseCSVToDb(csvText) {
+            const lines = csvText.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            let addedCount = 0;
+            const header = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+            let nameIdx = header.findIndex(h => h.includes('姓名') || h.includes('名字') || h.includes('Name'));
+            let genderIdx = header.findIndex(h => h.includes('性別') || h.includes('Gender'));
+            let levelIdx = header.findIndex(h => h.includes('等級') || h.includes('級數') || h.includes('Level'));
+
+            const startRow = (nameIdx !== -1) ? 1 : 0;
+            if (nameIdx === -1) nameIdx = 0;
+            if (genderIdx === -1) genderIdx = 1;
+            if (levelIdx === -1) levelIdx = 2;
+
+            for (let i = startRow; i < lines.length; i++) {
+                const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
+                const name = extractOnlyName(cols[nameIdx]);
+                if (!name) continue;
+
+                let gender = cols[genderIdx] || '?';
+                if (gender.includes('女') || gender.toLowerCase().startsWith('f')) gender = '女';
+                else if (gender.includes('男') || gender.toLowerCase().startsWith('m')) gender = '男';
+                else gender = '?';
+
+                let level = parseLevelText(cols[levelIdx]);
+
+                const existingIndex = state.dbPlayers.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+                if (existingIndex >= 0) {
+                    state.dbPlayers[existingIndex] = { name: state.dbPlayers[existingIndex].name, gender, level };
+                } else {
+                    state.dbPlayers.push({ name, gender, level });
+                }
+
+                const activePlayer = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+                if (activePlayer) {
+                    activePlayer.gender = gender;
+                    activePlayer.level = level;
+                }
+                addedCount++;
+            }
+
+            saveData();
+            render();
+            alert(`成功匯入/更新 ${addedCount} 筆資料庫名單！`);
+        }
+
+        function importPastedText() {
+            const rawText = document.getElementById('dbBatchPasteInput').value.trim();
+            if (!rawText) { alert("請先貼上資料！"); return; }
+
+            const lines = rawText.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split(/[\t,\s]+/).map(p => p.trim()).filter(p => p.length > 0);
+                if (parts.length > 0) {
+                    const name = extractOnlyName(parts[0]);
+                    if (!name) return;
+
+                    let gender = '?';
+                    let level = '?';
+
+                    for (let i = 1; i < parts.length; i++) {
+                        if (parts[i].includes('女')) gender = '女';
+                        if (parts[i].includes('男')) gender = '男';
+                        const parsedLvl = parseLevelText(parts[i]);
+                        if (parsedLvl !== '?') level = parsedLvl;
+                    }
+
+                    const existingIndex = state.dbPlayers.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+                    if (existingIndex >= 0) {
+                        state.dbPlayers[existingIndex] = { name: state.dbPlayers[existingIndex].name, gender, level };
+                    } else {
+                        state.dbPlayers.push({ name, gender, level });
+                    }
+
+                    const activePlayer = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+                    if (activePlayer) {
+                        activePlayer.gender = gender;
+                        activePlayer.level = level;
+                    }
+                    addedCount++;
+                }
+            });
+
+            document.getElementById('dbBatchPasteInput').value = '';
+            saveData();
+            render();
+            alert(`成功匯入/更新 ${addedCount} 筆資料庫名單！`);
+        }
+
+        function addBatchPlayers() {
+            const text = document.getElementById('batchNameInput').value;
+            if (text.trim()) {
+                parseAndAddNames(text);
+                document.getElementById('batchNameInput').value = '';
+                saveData();
+                render();
+            }
+        }
+
+        function parseAndAddNames(rawText) {
+            const lines = rawText.split(/[\n,\r、]+/).map(n => n.trim()).filter(n => n.length > 0);
+            
+            lines.forEach(line => {
+                let cleanedName = extractOnlyName(line);
+                if (cleanedName.length > 0) {
+                    const dbMatch = state.dbPlayers.find(p => p.name.toLowerCase() === cleanedName.toLowerCase());
+                    const gender = dbMatch ? dbMatch.gender : '?';
+                    const level = dbMatch ? dbMatch.level : '?';
+
+                    const existing = state.players.find(p => p.name.toLowerCase() === cleanedName.toLowerCase());
+                    if (!existing) {
+                        state.players.push({
+                            id: Date.now() + Math.random().toString().substr(2, 5),
+                            name: cleanedName,
+                            gender: gender,
+                            level: level,
+                            count: 0,
+                            lastPlayedTime: Date.now(),
+                            status: 'idle',
+                            checkedIn: false,
+                            isPaid: false,
+                            discount: 0,
+                            note: ''
+                        });
+                    }
+                }
+            });
+        }
+
+        function resetTodayData() {
+            if (confirm("確定要清空主排場頁今天的排場與簽到資料嗎？\n(歷史紀錄區與統計數據完全不受影響)")) {
+                syncDailySummarySnapshot();
+                state.players = [];
+                for (let c in state.courts) state.courts[c] = [];
+                for (let q in state.preQueues) state.preQueues[q] = [];
+                localStorage.setItem('veggie_badminton_v3_state', JSON.stringify(state));
+                render();
+            }
+        }
+
+        function changeCourtCount() {
+            const count = parseInt(document.getElementById('courtCountSelect').value);
+            state.courtCount = count;
+            for (let i = 1; i <= count; i++) {
+                if (!state.courts[i]) state.courts[i] = [];
+                if (!state.courtNames[i]) state.courtNames[i] = `場地 ${i}`;
+            }
+            saveData();
+            render();
+        }
+
+        function toggleInputSection() {
+            const sec = document.getElementById('inputSection');
+            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleManageTable() {
+            const wrapper = document.getElementById('manageTableWrapper');
+            const arrow = document.getElementById('manageTableArrow');
+            if (wrapper.style.display === 'none') {
+                wrapper.style.display = 'block';
+                arrow.innerText = '▲';
+            } else {
+                wrapper.style.display = 'none';
+                arrow.innerText = '▼';
+            }
+        }
+
+        function toggleCheckIn(id) {
+            const p = state.players.find(x => x.id === id);
+            if (p) {
+                p.checkedIn = !p.checkedIn;
+                if (p.checkedIn) {
+                    p.lastPlayedTime = Date.now();
+                }
+                saveData();
+                render();
+            }
+        }
+
+        function togglePay(id) {
+            const p = state.players.find(x => x.id === id);
+            if (p) { p.isPaid = !p.isPaid; saveData(); render(); }
+        }
+
+        function toggleLeftStatus(id) {
+            const p = state.players.find(x => x.id === id);
+            if (p) {
+                p.status = p.status === 'left' ? 'idle' : 'left';
+                saveData();
+                render();
+            }
+        }
+
+        function updateDiscount(id, val) {
+            const p = state.players.find(x => x.id === id);
+            if (p) { p.discount = Math.max(0, parseInt(val) || 0); saveData(); render(); }
+        }
+
+        function updateNote(id, val) {
+            const p = state.players.find(x => x.id === id);
+            if (p) { p.note = val; saveData(); }
+        }
+
+        function removePlayer(id) {
+            state.players = state.players.filter(p => p.id !== id);
+            for (let c in state.courts) state.courts[c] = state.courts[c].filter(pid => pid !== id);
+            for (let q in state.preQueues) state.preQueues[q] = state.preQueues[q].filter(pid => pid !== id);
+            saveData();
+            render();
+        }
+
+        function joinPreQueue(playerId, qIndex) {
+            if ((state.preQueues[qIndex] || []).length >= 4) return;
+            const player = state.players.find(p => p.id === playerId);
+            if (player) {
+                player.status = 'queued';
+                if (!state.preQueues[qIndex]) state.preQueues[qIndex] = [];
+                state.preQueues[qIndex].push(playerId);
+                saveData();
+                render();
+            }
+        }
+
+        function removeFromPreQueue(playerId, qIndex) {
+            const player = state.players.find(p => p.id === playerId);
+            if (player) {
+                player.status = 'idle';
+                state.preQueues[qIndex] = state.preQueues[qIndex].filter(id => id !== playerId);
+                saveData();
+                render();
+            }
+        }
+
+        /* 統一廣播函數：叮咚 + 現在請 xx、xx、xx、xx 上場打球 */
+        function speakPlayers(playerObjects) {
+            if (!playerObjects || playerObjects.length === 0) return;
+
+            const namesText = playerObjects.map(p => convertEnglishToPhonics(p.name)).join('、');
+            const speechText = `現在請 ${namesText} 上場打球。`;
+
+            if (!('speechSynthesis' in window)) {
+                alert("您的瀏覽器不支援語音廣播功能。");
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            playDingDongSound(() => {
+                const selectedVoice = getYatingOrBestVoice();
+
+                const createUtterance = (pitchVal) => {
+                    const u = new SpeechSynthesisUtterance(speechText);
+                    u.lang = 'zh-TW';
+                    u.rate = 0.95;
+                    u.pitch = pitchVal;
+                    if (selectedVoice) u.voice = selectedVoice;
+                    return u;
+                };
+
+                const u1 = createUtterance(1.05);
+                const u2 = createUtterance(1.1);
+
+                window.speechSynthesis.speak(u1);
+                window.speechSynthesis.speak(u2);
+            });
+        }
+
+        /* 球場現況區廣播：針對該場地的球員進行廣播 */
+        function announceCourt(courtNum) {
+            const courtPlayers = (state.courts[courtNum] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
+            if (courtPlayers.length === 0) {
+                alert("該場地目前沒有球員！");
+                return;
+            }
+            speakPlayers(courtPlayers);
+        }
+
+        /* 按下「上場」按鈕：移動球員 + 廣播球員 */
+        function sendPreQueueToCourt(qIndex, courtNum) {
+            if ((state.preQueues[qIndex] || []).length < 4) {
+                alert("預排隊伍需滿 4 人才能上場！");
+                return;
+            }
+            if (state.courts[courtNum] && state.courts[courtNum].length > 0) {
+                alert(`目前 ${state.courtNames[courtNum]} 有人在打球，請先清場！`);
+                return;
+            }
+
+            const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
+
+            // 1. 執行語音廣播（不包含場地名稱）
+            speakPlayers(queuePlayers);
+
+            // 2. 將球員移入目標場地，並更新狀態
+            state.courts[courtNum] = [...state.preQueues[qIndex]];
+            state.preQueues[qIndex].forEach(id => {
+                const p = state.players.find(x => x.id === id);
+                if (p) {
+                    p.status = 'playing';
+                    p.checkedIn = true;
+                }
+            });
+
+            // 3. 清空該預排隊伍
+            state.preQueues[qIndex] = [];
+            saveData();
+            render();
+        }
+
+        function removeFromCourt(playerId, courtNum) {
+            const p = state.players.find(x => x.id === playerId);
+            if (p) {
+                p.status = 'idle';
+                p.lastPlayedTime = Date.now();
+                state.courts[courtNum] = state.courts[courtNum].filter(id => id !== playerId);
+                saveData();
+                render();
+            }
+        }
+
+        function finishCourtMatch(courtNum) {
+            const courtPlayers = state.courts[courtNum] || [];
+            if (courtPlayers.length === 0) return;
+
+            const playerObjects = courtPlayers.map(id => state.players.find(p => p.id === id)).filter(Boolean);
+            const names = playerObjects.map(p => p.name).join('、');
+
+            const dateStr = document.getElementById('currentDateInput').value || new Date().toISOString().slice(0, 10);
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            state.logs.unshift({
+                date: dateStr,
+                time: timeStr,
+                courtName: state.courtNames[courtNum] || `場地 ${courtNum}`,
+                players: names
+            });
+
+            const now = Date.now();
+            playerObjects.forEach(p => {
+                p.count += 1;
+                p.status = 'idle';
+                p.checkedIn = true;
+                p.lastPlayedTime = now;
+            });
+
+            state.courts[courtNum] = [];
+            saveData();
+            render();
+        }
+
+        function updateIdleTimes() {
+            const now = Date.now();
+            state.players.forEach(p => {
+                if (p.checkedIn && p.status === 'idle' && p.lastPlayedTime) {
+                    const diffSec = Math.floor((now - p.lastPlayedTime) / 1000);
+                    const mins = Math.floor(diffSec / 60);
+                    const secs = diffSec % 60;
+                    const timeText = `${String(mins).padStart(2, '0')}分${String(secs).padStart(2, '0')}秒`;
+                    
+                    const el = document.getElementById(`idleTime-${p.id}`);
+                    if (el) el.innerText = timeText;
+                }
+            });
+        }
+
+        function render() {
+            renderCourts();
+            renderPreQueues();
+            renderWaitingList();
+            renderDbPlayerList();
+            renderManageList();
+        }
+
+        function renderCourts() {
+            const container = document.getElementById('courtsContainer');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= state.courtCount; i++) {
+                const courtPlayers = (state.courts[i] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
+
+                let playersHTML = courtPlayers.map(p => {
+                    let nameClass = 'name-male';
+                    if (p.gender === '女') nameClass = 'name-female';
+                    else if (p.gender === '?') nameClass = 'name-unknown';
+
+                    return `
+                        <span class="chip chip-playing ${nameClass}">
+                            ${p.name}
+                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold; margin-left:2px;" onclick="removeFromCourt('${p.id}', ${i})">✕</button>
+                        </span>
+                    `;
+                }).join('');
+
+                container.innerHTML += `
+                    <div class="court-card">
+                        <div class="court-title">
+                            <span>🏸 ${state.courtNames[i] || '場地 ' + i} (${courtPlayers.length}/4)</span>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <button class="btn btn-primary btn-sm" style="font-size:0.7rem; padding:2px 6px; background:linear-gradient(135deg, #1565c0, #1e88e5);" onclick="announceCourt(${i})" ${courtPlayers.length === 0 ? 'disabled style="opacity:0.5"' : ''}>🔊 廣播上場</button>
+                                <button class="btn btn-warning btn-sm" onclick="finishCourtMatch(${i})" ${courtPlayers.length === 0 ? 'disabled style="opacity:0.5"' : ''}>🏁 下場結算</button>
+                            </div>
+                        </div>
+                        <div class="player-chips">${playersHTML || '<span style="color:#aaa; font-size:0.75rem;">尚無球員在上場</span>'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPreQueues() {
+            const container = document.getElementById('preQueuesContainer');
+            container.innerHTML = '';
+
+            for (let q = 1; q <= 3; q++) {
+                const queuePlayers = (state.preQueues[q] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
+                
+                let courtBtns = '';
+                for (let c = 1; c <= state.courtCount; c++) {
+                    const isCourtEmpty = (!state.courts[c] || state.courts[c].length === 0);
+                    if (isCourtEmpty) {
+                        courtBtns += `<button class="btn-court" onclick="sendPreQueueToCourt(${q}, ${c})">上場 ${c}</button>`;
+                    }
+                }
+
+                let chips = queuePlayers.map(p => {
+                    let nameClass = 'name-male';
+                    if (p.gender === '女') nameClass = 'name-female';
+                    else if (p.gender === '?') nameClass = 'name-unknown';
+
+                    return `
+                        <span class="chip ${nameClass}">
+                            ${p.name}
+                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold;" onclick="removeFromPreQueue('${p.id}', ${q})">✕</button>
+                        </span>
+                    `;
+                }).join('');
+
+                container.innerHTML += `
+                    <div class="pre-queue-compact">
+                        <div class="pre-queue-header">
+                            <span>預排隊伍 ${q} (${queuePlayers.length}/4)</span>
+                            <div>
+                                ${queuePlayers.length === 4 ? '<span style="color:#2e7d32; font-size:0.75rem;">✅ 已額滿</span>' : '<span style="color:#888; font-size:0.72rem;">(未滿)</span>'}
+                            </div>
+                        </div>
+                        <div class="player-chips">${chips || '<span style="color:#aaa; font-size:0.75rem;">由下方休息區點選預排</span>'}</div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap:4px; margin-top:2px;">
+                            ${courtBtns || '<span style="color:#888; font-size:0.7rem; font-style:italic; padding:2px;">(場地全滿中，清場後顯示上場按鈕)</span>'}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderWaitingList() {
+            const femaleContainer = document.getElementById('waitingListFemale');
+            const maleContainer = document.getElementById('waitingListMale');
+            const unknownContainer = document.getElementById('waitingListUnknown');
+            const leftContainer = document.getElementById('waitingListLeft');
+
+            femaleContainer.innerHTML = '';
+            maleContainer.innerHTML = '';
+            unknownContainer.innerHTML = '';
+            leftContainer.innerHTML = '';
+
+            const activeIdlePlayers = state.players.filter(p => p.checkedIn && p.status === 'idle');
+            const minCount = activeIdlePlayers.length > 0 ? Math.min(...activeIdlePlayers.map(p => p.count)) : -1;
+
+            state.players.forEach(p => {
+                if (!p.checkedIn) return;
+
+                if (p.status === 'left') {
+                    leftContainer.innerHTML += `
+                        <div class="player-card left-away">
+                            <div class="player-name">
+                                <span class="${p.gender === '女' ? 'name-female' : (p.gender === '男' ? 'name-male' : 'name-unknown')}">${p.name}</span>
+                                <button class="btn btn-secondary btn-sm" onclick="toggleLeftStatus('${p.id}')">返回</button>
+                            </div>
+                            <div class="player-info">暫離中</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (p.status !== 'idle') return;
+
+                const isHighlight = p.count === minCount;
+                const now = Date.now();
+                const diffSec = Math.floor((now - p.lastPlayedTime) / 1000);
+                const mins = Math.floor(diffSec / 60);
+                const secs = diffSec % 60;
+                const timeText = `${String(mins).padStart(2, '0')}分${String(secs).padStart(2, '0')}秒`;
+
+                let qBtns = '';
+                for (let q = 1; q <= 3; q++) {
+                    const isQueueFull = (state.preQueues[q] || []).length >= 4;
+                    if (!isQueueFull) {
+                        qBtns += `<button class="btn-court" style="background:#fff3e0; color:#e65100; border-color:#ffe0b2;" onclick="joinPreQueue('${p.id}', ${q})">隊${q}</button>`;
+                    }
+                }
+
+                let nameClass = 'name-male';
+                if (p.gender === '女') nameClass = 'name-female';
+                else if (p.gender === '?') nameClass = 'name-unknown';
+
+                const cardHTML = `
+                    <div class="player-card ${isHighlight ? 'highlight' : ''}">
+                        <div>
+                            <div class="player-name">
+                                <span class="${nameClass}">${p.name}</span>
+                                <span class="player-badge">${p.level || '?'}</span>
+                            </div>
+                            <div class="player-info">
+                                場次: <b>${p.count}</b> | 等待: <span id="idleTime-${p.id}">${timeText}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="court-btns">${qBtns}</div>
+                            <button class="btn btn-secondary btn-sm" style="width:100%; margin-top:3px; font-size:0.65rem;" onclick="toggleLeftStatus('${p.id}')">👋 暫離</button>
+                        </div>
+                    </div>
+                `;
+
+                if (p.gender === '女') {
+                    femaleContainer.innerHTML += cardHTML;
+                } else if (p.gender === '男') {
+                    maleContainer.innerHTML += cardHTML;
+                } else {
+                    unknownContainer.innerHTML += cardHTML;
+                }
+            });
+
+            if (femaleContainer.innerHTML === '') femaleContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無等待中女生</span>`;
+            if (maleContainer.innerHTML === '') maleContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無等待中男生</span>`;
+            if (unknownContainer.innerHTML === '') unknownContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無待補資料人員</span>`;
+        }
+
+        function renderDbPlayerList() {
+            const container = document.getElementById('dbPlayerList');
+            container.innerHTML = '';
+
+            state.dbPlayers.forEach(p => {
+                let nameClass = 'name-male';
+                if (p.gender === '女') nameClass = 'name-female';
+                else if (p.gender === '?') nameClass = 'name-unknown';
+
+                container.innerHTML += `
+                    <tr>
+                        <td class="${nameClass}">${p.name}</td>
+                        <td>
+                            <select style="font-size:0.75rem; padding:2px;" onchange="updateDbPlayerField('${p.name}', 'gender', this.value)">
+                                <option value="男" ${p.gender === '男' ? 'selected' : ''}>👨 男</option>
+                                <option value="女" ${p.gender === '女' ? 'selected' : ''}>👩 女</option>
+                                <option value="?" ${p.gender === '?' ? 'selected' : ''}>❓ 未知</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select style="font-size:0.75rem; padding:2px;" onchange="updateDbPlayerField('${p.name}', 'level', this.value)">
+                                <option value="?" ${p.level === '?' ? 'selected' : ''}>❓ 待定</option>
+                                ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(l => `<option value="${l}級" ${p.level === `${l}級` ? 'selected' : ''}>${l}級</option>`).join('')}
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeDbPlayer('${p.name}')">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderManageList() {
+            const container = document.getElementById('playerManageList');
+            container.innerHTML = '';
+
+            let currentPaidTotal = 0;
+
+            state.players.forEach(p => {
+                let nameClass = 'name-male';
+                if (p.gender === '女') nameClass = 'name-female';
+                else if (p.gender === '?') nameClass = 'name-unknown';
+
+                if (p.isPaid) {
+                    currentPaidTotal += Math.max(0, state.feePerPerson - (p.discount || 0));
+                }
+
+                container.innerHTML += `
+                    <tr>
+                        <td class="${nameClass}">${p.name}</td>
+                        <td>${p.gender}</td>
+                        <td>
+                            <button class="btn btn-sm ${p.checkedIn ? 'btn-primary' : 'btn-secondary'}" onclick="toggleCheckIn('${p.id}')">
+                                ${p.checkedIn ? '到' : '無'}
+                            </button>
+                        </td>
+                        <td>
+                            <span class="pay-tag ${p.isPaid ? 'pay-paid' : 'pay-unpaid'}" onclick="togglePay('${p.id}')">
+                                ${p.isPaid ? '已繳' : '未繳'}
+                            </span>
+                        </td>
+                        <td>
+                            <input type="number" value="${p.discount || 0}" style="width:40px; font-size:0.72rem; padding:1px 3px;" onchange="updateDiscount('${p.id}', this.value)">
+                        </td>
+                        <td>
+                            <input type="text" value="${p.note || ''}" style="width:60px; font-size:0.72rem; padding:1px 3px;" onchange="updateNote('${p.id}', this.value)">
+                        </td>
+                        <td>
+                            <button style="border:none; background:none; cursor:pointer; color:#c62828;" onclick="removePlayer('${p.id}')">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('livePaidTotalDisplay').innerText = `${currentPaidTotal} 元`;
+            
+            syncDailySummarySnapshot();
+        }
+
+        function updateHistoryDateSelect() {
+            const select = document.getElementById('historyDateSelect');
+            const datesSet = new Set(state.logs.map(l => l.date));
+            if (state.dailySummaries) {
+                Object.keys(state.dailySummaries).forEach(d => datesSet.add(d));
+            }
+            
+            const curDate = document.getElementById('currentDateInput').value || state.currentDate;
+            datesSet.add(curDate);
+
+            const dates = Array.from(datesSet).sort().reverse();
+            select.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
+            select.value = curDate;
+        }
+
+        function renderHistory() {
+            const select = document.getElementById('historyDateSelect');
+            if (!select) return;
+            
+            const selectedDate = select.value || document.getElementById('currentDateInput').value;
+            const filteredLogs = state.logs.filter(l => l.date === selectedDate);
+
+            let totalCheckedIn = 0;
+            let totalPaidAmount = 0;
+
+            if (state.dailySummaries && state.dailySummaries[selectedDate]) {
+                totalCheckedIn = state.dailySummaries[selectedDate].checkedInCount || 0;
+                totalPaidAmount = state.dailySummaries[selectedDate].totalPaid || 0;
+            }
+
+            document.getElementById('statTotalMatches').innerText = `${filteredLogs.length} 場`;
+            document.getElementById('statTotalCheckedIn').innerText = `${totalCheckedIn} 人`;
+            document.getElementById('statTotalPaid').innerText = `${totalPaidAmount} 元`;
+
+            const logContainer = document.getElementById('logList');
+            if (filteredLogs.length === 0) {
+                logContainer.innerHTML = '<span style="color:#aaa;">該日期尚無對戰紀錄</span>';
+            } else {
+                logContainer.innerHTML = filteredLogs.map(log => `
+                    <div class="log-item">
+                        <b>[${log.time}] ${log.courtName}</b><br>
+                        球員：${log.players}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function clearHistoryLogs() {
+            const pwd = prompt("⚠️ 請輸入清除密碼以確認清空歷史對戰紀錄與結算數據：");
+            if (pwd === null) return;
+
+            if (pwd === "1234") {
+                state.logs = [];
+                state.dailySummaries = {};
+                saveData();
+                updateHistoryDateSelect();
+                renderHistory();
+                alert("已成功清空所有歷史對戰紀錄！");
+            } else {
+                alert("❌ 密碼錯誤，無法清空歷史紀錄！");
+            }
+        }
+
+        function exportHistoryCSV() {
+            const selectedDate = document.getElementById('historyDateSelect').value;
+            const filteredLogs = state.logs.filter(l => l.date === selectedDate);
+
+            if (filteredLogs.length === 0) {
+                alert("該日期無紀錄可供匯出！");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "日期,時間,場地,對戰球員\n";
+
+            filteredLogs.forEach(log => {
+                csvContent += `"${log.date}","${log.time}","${log.courtName}","${log.players}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `badminton_history_${selectedDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importHistoryCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvText = e.target.result;
+                const lines = csvText.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length <= 1) {
+                    alert("匯入的檔案內容為空或無有效紀錄！");
+                    return;
+                }
+
+                let importedCount = 0;
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
+                    if (cols.length >= 4) {
+                        const [date, time, courtName, players] = cols;
+                        if (date && players) {
+                            state.logs.push({ date, time, courtName, players });
+                            importedCount++;
+                        }
+                    }
+                }
+
+                saveData();
+                updateHistoryDateSelect();
+                renderHistory();
+                alert(`成功匯入 ${importedCount} 筆歷史紀錄！`);
+                event.target.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    </script>
+</body>
+</html>
