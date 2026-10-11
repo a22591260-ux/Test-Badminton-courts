@@ -234,7 +234,7 @@
                 <span>📋 批次匯入當天名單</span>
                 <span style="font-size:0.72rem; color:#666; font-weight:normal;">自動淨化姓名(忽略性別/級數)</span>
             </div>
-            <textarea id="batchNameInput" rows="2" placeholder="貼上名單，例如：&#10;9.閔惇 男6級&#10;.姵彤 女5級" style="width:100%; margin-bottom:6px; resize:none;"></textarea>
+            <textarea id="batchNameInput" rows="2" placeholder="例如：&#10;小明 男 6級&#10;小華 女 5級" style="width:100%; margin-bottom:6px; resize:none;"></textarea>
             <div style="display:flex; gap:6px; justify-content:space-between; margin-bottom:6px;">
                 <button class="btn btn-primary" style="flex:1;" onclick="addBatchPlayers()">✨ 匯入名單</button>
                 <button class="btn btn-danger btn-sm" onclick="resetTodayData()">⚠️ 清空今日排場(獨立不影響歷史)</button>
@@ -375,7 +375,7 @@
                 <div style="font-size:0.75rem; color:#555;">
                     2. <b>直接複製 Excel 文字貼上</b> (格式: 姓名 性別 級數)：
                 </div>
-                <textarea id="dbBatchPasteInput" rows="3" placeholder="例如貼上：&#10;.姵彤 女 5級&#10;1. 小胖 男 8級" style="width:100%; resize:none;"></textarea>
+                <textarea id="dbBatchPasteInput" rows="3" placeholder="例如貼上：&#10;小明 男 6級&#10;小華 女 5級" style="width:100%; resize:none;"></textarea>
                 <button class="btn btn-primary btn-sm" onclick="importPastedText()">✨ 貼上資料匯入</button>
             </div>
         </div>
@@ -512,6 +512,12 @@
                     renderWaitingList();
                 }
             }
+        }
+
+        /* 修改場地名稱 */
+        function updateCourtName(courtNum, newName) {
+            state.courtNames[courtNum] = newName.trim() || `場地 ${courtNum}`;
+            saveData();
         }
 
         /* 台灣口語風格英文拼音轉換 */
@@ -1082,12 +1088,13 @@
             }
         }
 
-        /* 統一廣播函數 */
-        function speakPlayers(playerObjects) {
+        /* 統一廣播函數：叮咚 + X號場地 + 現在請 誰誰誰 上場打球 */
+        function speakPlayersForCourt(courtNum, playerObjects) {
             if (!playerObjects || playerObjects.length === 0) return;
 
+            const courtLabel = state.courtNames[courtNum] || `場地 ${courtNum}`;
             const namesText = playerObjects.map(p => convertEnglishToPhonics(p.name)).join('、');
-            const speechText = `現在請 ${namesText} 上場打球。`;
+            const speechText = `${courtLabel}，現在請 ${namesText} 上場打球。`;
 
             if (!('speechSynthesis' in window)) {
                 alert("您的瀏覽器不支援語音廣播功能。");
@@ -1116,17 +1123,17 @@
             });
         }
 
-        /* 球場現況區廣播 */
+        /* 球場現況區廣播：針對該場地的球員進行廣播 */
         function announceCourt(courtNum) {
             const courtPlayers = (state.courts[courtNum] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
             if (courtPlayers.length === 0) {
                 alert("該場地目前沒有球員！");
                 return;
             }
-            speakPlayers(courtPlayers);
+            speakPlayersForCourt(courtNum, courtPlayers);
         }
 
-        /* 按下「上場」按鈕 */
+        /* 按下「上場」按鈕：移動球員 + 廣播指定場地與球員 */
         function sendPreQueueToCourt(qIndex, courtNum) {
             if ((state.preQueues[qIndex] || []).length < 4) {
                 alert("預排隊伍需滿 4 人才能上場！");
@@ -1139,8 +1146,10 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            speakPlayers(queuePlayers);
+            // 1. 執行語音廣播（包含場地與球員姓名）
+            speakPlayersForCourt(courtNum, queuePlayers);
 
+            // 2. 將球員移入目標場地，並更新狀態
             state.courts[courtNum] = [...state.preQueues[qIndex]];
             state.preQueues[qIndex].forEach(id => {
                 const p = state.players.find(x => x.id === id);
@@ -1150,6 +1159,7 @@
                 }
             });
 
+            // 3. 清空該預排隊伍
             state.preQueues[qIndex] = [];
             saveData();
             render();
@@ -1237,6 +1247,7 @@
 
             for (let i = 1; i <= state.courtCount; i++) {
                 const courtPlayers = (state.courts[i] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
+                const currentCourtName = state.courtNames[i] || `場地 ${i}`;
 
                 let playersHTML = courtPlayers.map(p => {
                     let nameClass = 'name-male';
@@ -1246,7 +1257,7 @@
                     return `
                         <span class="chip chip-playing ${nameClass}">
                             ${p.name}
-                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold; margin-left:2px;" onclick="removeFromCourt('${p.id}', ${i})">✕</button>
+                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold; margin-left:2px;" onclick="removeFromCourt('${p.id}',${i})">✕</button>
                         </span>
                     `;
                 }).join('');
@@ -1254,7 +1265,11 @@
                 container.innerHTML += `
                     <div class="court-card">
                         <div class="court-title">
-                            <span>🏸 ${state.courtNames[i] || '場地 ' + i} (${courtPlayers.length}/4)</span>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span>🏸</span>
+                                <input type="text" value="${currentCourtName}" style="width:90px; font-weight:800; color:#1b5e20; padding:2px 4px; font-size:0.85rem;" onchange="updateCourtName(${i}, this.value)">
+                                <span style="font-size:0.75rem; color:#555;">(${courtPlayers.length}/4)</span>
+                            </div>
                             <div style="display:flex; gap:4px; align-items:center;">
                                 <button class="btn btn-primary btn-sm" style="font-size:0.7rem; padding:2px 6px; background:linear-gradient(135deg, #1565c0, #1e88e5);" onclick="announceCourt(${i})" ${courtPlayers.length === 0 ? 'disabled style="opacity:0.5"' : ''}>🔊 廣播上場</button>
                                 <button class="btn btn-warning btn-sm" onclick="finishCourtMatch(${i})" ${courtPlayers.length === 0 ? 'disabled style="opacity:0.5"' : ''}>🏁 下場結算</button>
@@ -1276,8 +1291,9 @@
                 let courtBtns = '';
                 for (let c = 1; c <= state.courtCount; c++) {
                     const isCourtEmpty = (!state.courts[c] || state.courts[c].length === 0);
+                    const cName = state.courtNames[c] || `場地 ${c}`;
                     if (isCourtEmpty) {
-                        courtBtns += `<button class="btn-court" onclick="sendPreQueueToCourt(${q}, ${c})">上場 ${c}</button>`;
+                        courtBtns += `<button class="btn-court" onclick="sendPreQueueToCourt(${q}, ${c})">上${cName}</button>`;
                     }
                 }
 
@@ -1289,7 +1305,7 @@
                     return `
                         <span class="chip ${nameClass}">
                             ${p.name}
-                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold;" onclick="removeFromPreQueue('${p.id}', ${q})">✕</button>
+                            <button style="border:none; background:none; cursor:pointer; color:#c62828; font-weight:bold;" onclick="removeFromPreQueue('${p.id}',${q})">✕</button>
                         </span>
                     `;
                 }).join('');
@@ -1303,314 +1319,4 @@
                             </div>
                         </div>
                         <div class="player-chips">${chips || '<span style="color:#aaa; font-size:0.75rem;">由下方休息區點選預排</span>'}</div>
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap:4px; margin-top:2px;">
-                            ${courtBtns || '<span style="color:#888; font-size:0.7rem; font-style:italic; padding:2px;">(場地全滿中，清場後顯示上場按鈕)</span>'}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function renderWaitingList() {
-            const femaleContainer = document.getElementById('waitingListFemale');
-            const maleContainer = document.getElementById('waitingListMale');
-            const unknownContainer = document.getElementById('waitingListUnknown');
-            const leftContainer = document.getElementById('waitingListLeft');
-
-            // 更新頂部標籤顯示分鐘數
-            const blueTag = document.getElementById('tagBlueTime');
-            const redTag = document.getElementById('tagRedTime');
-            if (blueTag) blueTag.innerText = `⏱️ >${state.waitBlueMin || 4}分藍`;
-            if (redTag) redTag.innerText = `⏱️ >${state.waitRedMin || 7}分紅`;
-
-            femaleContainer.innerHTML = '';
-            maleContainer.innerHTML = '';
-            unknownContainer.innerHTML = '';
-            leftContainer.innerHTML = '';
-
-            const activeIdlePlayers = state.players.filter(p => p.checkedIn && p.status === 'idle');
-            const minCount = activeIdlePlayers.length > 0 ? Math.min(...activeIdlePlayers.map(p => p.count)) : -1;
-
-            const blueSec = (state.waitBlueMin || 4) * 60;
-            const redSec = (state.waitRedMin || 7) * 60;
-
-            state.players.forEach(p => {
-                if (!p.checkedIn) return;
-
-                if (p.status === 'left') {
-                    leftContainer.innerHTML += `
-                        <div class="player-card left-away" id="playerCard-${p.id}">
-                            <div class="player-name">
-                                <span class="${p.gender === '女' ? 'name-female' : (p.gender === '男' ? 'name-male' : 'name-unknown')}">${p.name}</span>
-                                <button class="btn btn-secondary btn-sm" onclick="toggleLeftStatus('${p.id}')">返回</button>
-                            </div>
-                            <div class="player-info">暫離中</div>
-                        </div>
-                    `;
-                    return;
-                }
-
-                if (p.status !== 'idle') return;
-
-                const isHighlight = p.count === minCount;
-                const now = Date.now();
-                const diffSec = Math.floor((now - p.lastPlayedTime) / 1000);
-                const mins = Math.floor(diffSec / 60);
-                const secs = diffSec % 60;
-                const timeText = `${String(mins).padStart(2, '0')}分${String(secs).padStart(2, '0')}秒`;
-
-                let timeColorClass = '';
-                if (diffSec >= redSec) {
-                    timeColorClass = 'time-red';
-                } else if (diffSec >= blueSec) {
-                    timeColorClass = 'time-blue';
-                }
-
-                let qBtns = '';
-                for (let q = 1; q <= 3; q++) {
-                    const isQueueFull = (state.preQueues[q] || []).length >= 4;
-                    if (!isQueueFull) {
-                        qBtns += `<button class="btn-court" style="background:#fff3e0; color:#e65100; border-color:#ffe0b2;" onclick="joinPreQueue('${p.id}', ${q})">隊${q}</button>`;
-                    }
-                }
-
-                let nameClass = 'name-male';
-                if (p.gender === '女') nameClass = 'name-female';
-                else if (p.gender === '?') nameClass = 'name-unknown';
-
-                const cardHTML = `
-                    <div class="player-card ${isHighlight ? 'highlight' : ''}" id="playerCard-${p.id}">
-                        <div>
-                            <div class="player-name">
-                                <span class="${nameClass}">${p.name}</span>
-                                <span class="player-badge">${p.level || '?'}</span>
-                            </div>
-                            <div class="player-info">
-                                場次: <b>${p.count}</b> | 等待: <span id="idleTime-${p.id}" class="idle-time-text ${timeColorClass}">${timeText}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="court-btns">${qBtns}</div>
-                            <button class="btn btn-secondary btn-sm" style="width:100%; margin-top:3px; font-size:0.65rem;" onclick="toggleLeftStatus('${p.id}')">👋 暫離</button>
-                        </div>
-                    </div>
-                `;
-
-                if (p.gender === '女') {
-                    femaleContainer.innerHTML += cardHTML;
-                } else if (p.gender === '男') {
-                    maleContainer.innerHTML += cardHTML;
-                } else {
-                    unknownContainer.innerHTML += cardHTML;
-                }
-            });
-
-            if (femaleContainer.innerHTML === '') femaleContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無等待中女生</span>`;
-            if (maleContainer.innerHTML === '') maleContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無等待中男生</span>`;
-            if (unknownContainer.innerHTML === '') unknownContainer.innerHTML = `<span style="color:#aaa; font-size:0.75rem;">無待補資料人員</span>`;
-        }
-
-        function renderDbPlayerList() {
-            const container = document.getElementById('dbPlayerList');
-            container.innerHTML = '';
-
-            state.dbPlayers.forEach(p => {
-                let nameClass = 'name-male';
-                if (p.gender === '女') nameClass = 'name-female';
-                else if (p.gender === '?') nameClass = 'name-unknown';
-
-                container.innerHTML += `
-                    <tr>
-                        <td class="${nameClass}">${p.name}</td>
-                        <td>
-                            <select style="font-size:0.75rem; padding:2px;" onchange="updateDbPlayerField('${p.name}', 'gender', this.value)">
-                                <option value="男" ${p.gender === '男' ? 'selected' : ''}>👨 男</option>
-                                <option value="女" ${p.gender === '女' ? 'selected' : ''}>👩 女</option>
-                                <option value="?" ${p.gender === '?' ? 'selected' : ''}>❓ 未知</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select style="font-size:0.75rem; padding:2px;" onchange="updateDbPlayerField('${p.name}', 'level', this.value)">
-                                <option value="?" ${p.level === '?' ? 'selected' : ''}>❓ 待定</option>
-                                ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(l => `<option value="${l}級" ${p.level === `${l}級` ? 'selected' : ''}>${l}級</option>`).join('')}
-                            </select>
-                        </td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" onclick="removeDbPlayer('${p.name}')">✕</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function renderManageList() {
-            const container = document.getElementById('playerManageList');
-            container.innerHTML = '';
-
-            let currentPaidTotal = 0;
-
-            state.players.forEach(p => {
-                let nameClass = 'name-male';
-                if (p.gender === '女') nameClass = 'name-female';
-                else if (p.gender === '?') nameClass = 'name-unknown';
-
-                if (p.isPaid) {
-                    currentPaidTotal += Math.max(0, state.feePerPerson - (p.discount || 0));
-                }
-
-                container.innerHTML += `
-                    <tr>
-                        <td class="${nameClass}">${p.name}</td>
-                        <td>${p.gender}</td>
-                        <td>
-                            <button class="btn btn-sm ${p.checkedIn ? 'btn-primary' : 'btn-secondary'}" onclick="toggleCheckIn('${p.id}')">
-                                ${p.checkedIn ? '到' : '無'}
-                            </button>
-                        </td>
-                        <td>
-                            <span class="pay-tag ${p.isPaid ? 'pay-paid' : 'pay-unpaid'}" onclick="togglePay('${p.id}')">
-                                ${p.isPaid ? '已繳' : '未繳'}
-                            </span>
-                        </td>
-                        <td>
-                            <input type="number" value="${p.discount || 0}" style="width:40px; font-size:0.72rem; padding:1px 3px;" onchange="updateDiscount('${p.id}', this.value)">
-                        </td>
-                        <td>
-                            <input type="text" value="${p.note || ''}" style="width:60px; font-size:0.72rem; padding:1px 3px;" onchange="updateNote('${p.id}', this.value)">
-                        </td>
-                        <td>
-                            <button style="border:none; background:none; cursor:pointer; color:#c62828;" onclick="removePlayer('${p.id}')">✕</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('livePaidTotalDisplay').innerText = `${currentPaidTotal} 元`;
-            
-            syncDailySummarySnapshot();
-        }
-
-        function updateHistoryDateSelect() {
-            const select = document.getElementById('historyDateSelect');
-            const datesSet = new Set(state.logs.map(l => l.date));
-            if (state.dailySummaries) {
-                Object.keys(state.dailySummaries).forEach(d => datesSet.add(d));
-            }
-            
-            const curDate = document.getElementById('currentDateInput').value || state.currentDate;
-            datesSet.add(curDate);
-
-            const dates = Array.from(datesSet).sort().reverse();
-            select.innerHTML = dates.map(d => `<option value="${d}">${d}</option>`).join('');
-            select.value = curDate;
-        }
-
-        function renderHistory() {
-            const select = document.getElementById('historyDateSelect');
-            if (!select) return;
-            
-            const selectedDate = select.value || document.getElementById('currentDateInput').value;
-            const filteredLogs = state.logs.filter(l => l.date === selectedDate);
-
-            let totalCheckedIn = 0;
-            let totalPaidAmount = 0;
-
-            if (state.dailySummaries && state.dailySummaries[selectedDate]) {
-                totalCheckedIn = state.dailySummaries[selectedDate].checkedInCount || 0;
-                totalPaidAmount = state.dailySummaries[selectedDate].totalPaid || 0;
-            }
-
-            document.getElementById('statTotalMatches').innerText = `${filteredLogs.length} 場`;
-            document.getElementById('statTotalCheckedIn').innerText = `${totalCheckedIn} 人`;
-            document.getElementById('statTotalPaid').innerText = `${totalPaidAmount} 元`;
-
-            const logContainer = document.getElementById('logList');
-            if (filteredLogs.length === 0) {
-                logContainer.innerHTML = '<span style="color:#aaa;">該日期尚無對戰紀錄</span>';
-            } else {
-                logContainer.innerHTML = filteredLogs.map(log => `
-                    <div class="log-item">
-                        <b>[${log.time}] ${log.courtName}</b><br>
-                        球員：${log.players}
-                    </div>
-                `).join('');
-            }
-        }
-
-        function clearHistoryLogs() {
-            const pwd = prompt("⚠️ 請輸入清除密碼以確認清空歷史對戰紀錄與結算數據：");
-            if (pwd === null) return;
-
-            if (pwd === "1234") {
-                state.logs = [];
-                state.dailySummaries = {};
-                saveData();
-                updateHistoryDateSelect();
-                renderHistory();
-                alert("已成功清空所有歷史對戰紀錄！");
-            } else {
-                alert("❌ 密碼錯誤，無法清空歷史紀錄！");
-            }
-        }
-
-        function exportHistoryCSV() {
-            const selectedDate = document.getElementById('historyDateSelect').value;
-            const filteredLogs = state.logs.filter(l => l.date === selectedDate);
-
-            if (filteredLogs.length === 0) {
-                alert("該日期無紀錄可供匯出！");
-                return;
-            }
-
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "日期,時間,場地,對戰球員\n";
-
-            filteredLogs.forEach(log => {
-                csvContent += `"${log.date}","${log.time}","${log.courtName}","${log.players}"\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `badminton_history_${selectedDate}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function importHistoryCSV(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvText = e.target.result;
-                const lines = csvText.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
-                if (lines.length <= 1) {
-                    alert("匯入的檔案內容為空或無有效紀錄！");
-                    return;
-                }
-
-                let importedCount = 0;
-                for (let i = 1; i < lines.length; i++) {
-                    const cols = lines[i].split(',').map(c => c.replace(/"/g, '').trim());
-                    if (cols.length >= 4) {
-                        const [date, time, courtName, players] = cols;
-                        if (date && players) {
-                            state.logs.push({ date, time, courtName, players });
-                            importedCount++;
-                        }
-                    }
-                }
-
-                saveData();
-                updateHistoryDateSelect();
-                renderHistory();
-                alert(`成功匯入 ${importedCount} 筆歷史紀錄！`);
-                event.target.value = '';
-            };
-            reader.readAsText(file, 'UTF-8');
-        }
-    </script>
-</body>
-</html>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax
