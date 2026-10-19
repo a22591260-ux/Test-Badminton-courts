@@ -1088,13 +1088,13 @@
             }
         }
 
-        /* 統一廣播函數：叮咚 + X號場地 + 現在請 誰誰誰 上場打球 */
+        /* 統一廣播函數：叮咚 + 誰誰誰 + 請上 X號場地 */
         function speakPlayersForCourt(courtNum, playerObjects) {
             if (!playerObjects || playerObjects.length === 0) return;
 
             const courtLabel = state.courtNames[courtNum] || `場地 ${courtNum}`;
             const namesText = playerObjects.map(p => convertEnglishToPhonics(p.name)).join('、');
-            const speechText = `${courtLabel}，現在請 ${namesText} 上場打球。`;
+            const speechText = `${namesText}，請上 ${courtLabel}。`;
 
             if (!('speechSynthesis' in window)) {
                 alert("您的瀏覽器不支援語音廣播功能。");
@@ -1146,7 +1146,7 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            // 1. 執行語音廣播（包含場地與球員姓名）
+            // 1. 執行語音廣播（包含球員姓名與目標場地）
             speakPlayersForCourt(courtNum, queuePlayers);
 
             // 2. 將球員移入目標場地，並更新狀態
