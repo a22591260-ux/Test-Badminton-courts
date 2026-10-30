@@ -234,7 +234,8 @@
                 <span>📋 批次匯入當天名單</span>
                 <span style="font-size:0.72rem; color:#666; font-weight:normal;">自動淨化姓名(忽略性別/級數)</span>
             </div>
-            <textarea id="batchNameInput" rows="2" placeholder="貼上名單，例如：&#10;9.閔惇 男6級&#10;.姵彤 女5級" style="width:100%; margin-bottom:6px; resize:none;"></textarea>
+            <!-- 自動伸縮 Textarea -->
+            <textarea id="batchNameInput" rows="4" placeholder="貼上名單，例如：&#10;9.閔惇 男6級&#10;.姵彤 女5級" style="width:100%; margin-bottom:6px; resize:none; overflow-y:hidden;" oninput="autoResizeTextarea(this)"></textarea>
             <div style="display:flex; gap:6px; justify-content:space-between; margin-bottom:6px;">
                 <button class="btn btn-primary" style="flex:1;" onclick="addBatchPlayers()">✨ 匯入名單</button>
                 <button class="btn btn-danger btn-sm" onclick="resetTodayData()">⚠️ 清空今日排場(獨立不影響歷史)</button>
@@ -481,7 +482,17 @@
             initSpeechVoices();
 
             render();
+            
+            // 初始化時觸發一次調整高度
+            const ta = document.getElementById('batchNameInput');
+            if (ta) autoResizeTextarea(ta);
         };
+
+        /* 自動調整 Textarea 高度函數 */
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight + 4) + 'px';
+        }
 
         function initSpeechVoices() {
             if ('speechSynthesis' in window) {
@@ -944,10 +955,12 @@
         }
 
         function addBatchPlayers() {
-            const text = document.getElementById('batchNameInput').value;
+            const ta = document.getElementById('batchNameInput');
+            const text = ta.value;
             if (text.trim()) {
                 parseAndAddNames(text);
-                document.getElementById('batchNameInput').value = '';
+                ta.value = '';
+                autoResizeTextarea(ta); // 匯入後自動收縮
                 saveData();
                 render();
             }
@@ -1008,6 +1021,10 @@
         function toggleInputSection() {
             const sec = document.getElementById('inputSection');
             sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+            if (sec.style.display === 'block') {
+                const ta = document.getElementById('batchNameInput');
+                if (ta) autoResizeTextarea(ta);
+            }
         }
 
         function toggleManageTable() {
