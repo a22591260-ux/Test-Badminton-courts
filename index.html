@@ -158,7 +158,7 @@
             cursor: pointer;
             padding: 1px 4px;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            transition: background-color: 0.2s;
         }
         .clickable-tag:hover {
             background-color: rgba(0,0,0,0.05);
@@ -234,8 +234,8 @@
                 <span>📋 批次匯入當天名單</span>
                 <span style="font-size:0.72rem; color:#666; font-weight:normal;">自動淨化姓名(忽略性別/級數)</span>
             </div>
-            <!-- 自動伸縮 Textarea -->
-            <textarea id="batchNameInput" rows="4" placeholder="貼上名單，例如：&#10;9.閔惇 男6級&#10;.姵彤 女5級" style="width:100%; margin-bottom:6px; resize:none; overflow-y:hidden;" oninput="autoResizeTextarea(this)"></textarea>
+            <!-- 自動伸縮 Textarea (虛擬代稱範例) -->
+            <textarea id="batchNameInput" rows="4" placeholder="貼上名單，例如：&#10;1. 選手一 男 6級&#10;2. 選手二 女 5級" style="width:100%; margin-bottom:6px; resize:none; overflow-y:hidden;" oninput="autoResizeTextarea(this)"></textarea>
             <div style="display:flex; gap:6px; justify-content:space-between; margin-bottom:6px;">
                 <button class="btn btn-primary" style="flex:1;" onclick="addBatchPlayers()">✨ 匯入名單</button>
                 <button class="btn btn-danger btn-sm" onclick="resetTodayData()">⚠️ 清空今日排場(獨立不影響歷史)</button>
@@ -376,7 +376,7 @@
                 <div style="font-size:0.75rem; color:#555;">
                     2. <b>直接複製 Excel 文字貼上</b> (格式: 姓名 性別 級數)：
                 </div>
-                <textarea id="dbBatchPasteInput" rows="3" placeholder="例如貼上：&#10;.姵彤 女 5級&#10;1. 小胖 男 8級" style="width:100%; resize:none;"></textarea>
+                <textarea id="dbBatchPasteInput" rows="3" placeholder="例如貼上：&#10;選手一 女 5級&#10;選手二 男 8級" style="width:100%; resize:none;"></textarea>
                 <button class="btn btn-primary btn-sm" onclick="importPastedText()">✨ 貼上資料匯入</button>
             </div>
         </div>
