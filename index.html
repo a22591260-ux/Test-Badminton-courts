@@ -286,7 +286,7 @@
             <div id="courtsContainer"></div>
         </div>
 
-        <!-- 第二區：緊湊預排隊伍區域 (3隊) -->
+        <!-- 第二區：預排隊伍區域 (3隊) -->
         <div class="section">
             <div class="section-title">
                 <span>📋 預排隊伍區域</span>
@@ -468,6 +468,10 @@
         let availableVoices = [];
         let audioCtx = null;
 
+        /* 全域語音佇列管理 */
+        let speechQueue = [];
+        let isSpeakingQueue = false;
+
         window.onload = function() {
             loadData();
             if (!state.currentDate) {
@@ -640,7 +644,7 @@
                 osc2.stop(now + 0.9);
 
                 if (callback) {
-                    setTimeout(callback, 650);
+                    setTimeout(callback, 750); // 確保音效完整結束後再繼續
                 }
             } catch(e) {
                 console.error("音效播放失敗，直接切換語音", e);
@@ -675,6 +679,59 @@
             }
 
             return null;
+        }
+
+        /* 放入廣播佇列執行排隊 */
+        function enqueueSpeech(speechText) {
+            speechQueue.push(speechText);
+            processSpeechQueue();
+        }
+
+        /* 依序處理廣播佇列：確保前一場廣播播畢才播下一場 */
+        function processSpeechQueue() {
+            if (isSpeakingQueue || speechQueue.length === 0) return;
+
+            isSpeakingQueue = true;
+            const currentText = speechQueue.shift();
+
+            if (!('speechSynthesis' in window)) {
+                alert("您的瀏覽器不支援語音廣播功能。");
+                isSpeakingQueue = false;
+                return;
+            }
+
+            // 播放叮咚音效，音效結束後再唸出文字
+            playDingDongSound(() => {
+                const selectedVoice = getYatingOrBestVoice();
+
+                const createUtterance = (text, pitchVal) => {
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'zh-TW';
+                    u.rate = 0.95;
+                    u.pitch = pitchVal;
+                    if (selectedVoice) u.voice = selectedVoice;
+                    return u;
+                };
+
+                const u1 = createUtterance(currentText, 1.05);
+                const u2 = createUtterance(currentText, 1.1); // 唸兩次加強清晰度
+
+                u2.onend = () => {
+                    // 等待間隔一下下再處理下一個佇列
+                    setTimeout(() => {
+                        isSpeakingQueue = false;
+                        processSpeechQueue();
+                    }, 400);
+                };
+
+                u2.onerror = () => {
+                    isSpeakingQueue = false;
+                    processSpeechQueue();
+                };
+
+                window.speechSynthesis.speak(u1);
+                window.speechSynthesis.speak(u2);
+            });
         }
 
         function saveData() {
@@ -1105,7 +1162,7 @@
             }
         }
 
-        /* 統一廣播函數：叮咚 + 誰誰誰 + 請上 X號場地 */
+        /* 透過佇列進行統一廣播：加入排隊序列，依序播放 */
         function speakPlayersForCourt(courtNum, playerObjects) {
             if (!playerObjects || playerObjects.length === 0) return;
 
@@ -1113,31 +1170,7 @@
             const namesText = playerObjects.map(p => convertEnglishToPhonics(p.name)).join('、');
             const speechText = `${namesText}，請上 ${courtLabel}。`;
 
-            if (!('speechSynthesis' in window)) {
-                alert("您的瀏覽器不支援語音廣播功能。");
-                return;
-            }
-
-            window.speechSynthesis.cancel();
-
-            playDingDongSound(() => {
-                const selectedVoice = getYatingOrBestVoice();
-
-                const createUtterance = (pitchVal) => {
-                    const u = new SpeechSynthesisUtterance(speechText);
-                    u.lang = 'zh-TW';
-                    u.rate = 0.95;
-                    u.pitch = pitchVal;
-                    if (selectedVoice) u.voice = selectedVoice;
-                    return u;
-                };
-
-                const u1 = createUtterance(1.05);
-                const u2 = createUtterance(1.1);
-
-                window.speechSynthesis.speak(u1);
-                window.speechSynthesis.speak(u2);
-            });
+            enqueueSpeech(speechText);
         }
 
         /* 球場現況區廣播：針對該場地的球員進行廣播 */
@@ -1163,7 +1196,7 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            // 1. 執行語音廣播（包含球員姓名與目標場地）
+            // 1. 執行語音廣播（加入佇列排隊）
             speakPlayersForCourt(courtNum, queuePlayers);
 
             // 2. 將球員移入目標場地，並更新狀態
