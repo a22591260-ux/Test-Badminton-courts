@@ -60,12 +60,12 @@
         }
         .tab-btn {
             flex: 1;
-            padding: 8px 4px;
+            padding: 8px 2px;
             border: none;
             background: rgba(0, 0, 0, 0.2);
             color: #c8e6c9;
             font-weight: bold;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             cursor: pointer;
             text-align: center;
             transition: all 0.2s;
@@ -184,6 +184,34 @@
         .log-item { border-bottom: 1px dashed #c8e6c9; padding: 4px 0; }
 
         .btn-note { font-size: 0.68rem; color: #d32f2f; font-weight: normal; margin-left: 4px; }
+
+        /* 說明書樣式 */
+        .manual-step {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #e8f5e9;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+        .manual-num {
+            background: var(--primary-green);
+            color: white;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+        .manual-text {
+            flex: 1;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -196,9 +224,10 @@
 
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
-        <button class="tab-btn active" id="tabMainBtn" onclick="switchPage('main')">🏸 主排場頁</button>
-        <button class="tab-btn" id="tabDbBtn" onclick="switchPage('db')">🗃️ 球員資料庫</button>
-        <button class="tab-btn" id="tabHistoryBtn" onclick="switchPage('history')">📊 歷史與紀錄</button>
+        <button class="tab-btn active" id="tabMainBtn" onclick="switchPage('main')">🏸 主排場</button>
+        <button class="tab-btn" id="tabDbBtn" onclick="switchPage('db')">🗃️ 資料庫</button>
+        <button class="tab-btn" id="tabHistoryBtn" onclick="switchPage('history')">📊 歷史</button>
+        <button class="tab-btn" id="tabManualBtn" onclick="switchPage('manual')">📖 說明書</button>
     </div>
 
     <!-- ==================== 頁面一：主功能頁 ==================== -->
@@ -448,6 +477,74 @@
         </div>
     </div>
 
+    <!-- ==================== 頁面四：APP 使用說明書 ==================== -->
+    <div id="pageManual" style="display:none;">
+        <div class="section">
+            <div class="section-title">📖 蔬食羽球智慧排場助手 - 操作說明書</div>
+            
+            <div class="manual-step">
+                <div class="manual-num">1</div>
+                <div class="manual-text">點選球員資料庫分頁，可用貼入、匯入或單筆新增姓名、性別、等級。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">2</div>
+                <div class="manual-text">切回主排場頁面，在今日打球人員的批次匯入處輸入名字加入。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">3</div>
+                <div class="manual-text">點選右上角「⚙️ 簽到管理」按鈕。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">4</div>
+                <div class="manual-text">點選打開「簽到與繳費明細」。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">5</div>
+                <div class="manual-text">依當天實際到場打球人員點選簽到，點選後最下方休息等待區會出現名字。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">6</div>
+                <div class="manual-text">如有繳費可以點選繳費，由未繳轉變為已繳，上方會自動加總金額。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">7</div>
+                <div class="manual-text">排場人員可以依照訂購場地數量選擇場地數。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">8</div>
+                <div class="manual-text">休息等待區可以點選「隊1」、「隊2」、「隊3」來上推預排區域。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">9</div>
+                <div class="manual-text">確定上場打球，點選對應場地進行上場，系統會自動啟動語音佇列進行廣播通知。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">10</div>
+                <div class="manual-text">打完球後點選下場結算，會自動累計次數，並重新計時休息時間。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">11</div>
+                <div class="manual-text">黃底為次數較少優先上場；藍色時間為超過指定時間，紅色時間為超過更長時間；可以點選休息等待區右邊的字體進行修改。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">12</div>
+                <div class="manual-text">如有先行離開，可以點選暫離，不列入等待時間計算。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">13</div>
+                <div class="manual-text">如有資料庫不完整（如沒有姓名或沒有等級），名字顏色會顯示為橘色；再切回球員資料庫可以進行修改，修改完成後會自動辨識。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">14</div>
+                <div class="manual-text">當次打完球後，即可點選主排場頁面的「清空今日排場」以利下次再進行安排。</div>
+            </div>
+            <div class="manual-step">
+                <div class="manual-num">15</div>
+                <div class="manual-text">歷史紀錄會記錄目前打球的相關資料與營運統計數據。</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let state = {
             currentDate: new Date().toISOString().slice(0, 10),
@@ -487,12 +584,10 @@
 
             render();
             
-            // 初始化時觸發一次調整高度
             const ta = document.getElementById('batchNameInput');
             if (ta) autoResizeTextarea(ta);
         };
 
-        /* 自動調整 Textarea 高度函數 */
         function autoResizeTextarea(el) {
             el.style.height = 'auto';
             el.style.height = (el.scrollHeight + 4) + 'px';
@@ -510,7 +605,6 @@
             }
         }
 
-        /* 點擊修改等待警示時間 */
         function changeWaitTime(type) {
             if (type === 'blue') {
                 const val = prompt("請輸入【藍色警示】的等待分鐘數：", state.waitBlueMin || 4);
@@ -529,13 +623,11 @@
             }
         }
 
-        /* 修改場地名稱 */
         function updateCourtName(courtNum, newName) {
             state.courtNames[courtNum] = newName.trim() || `場地 ${courtNum}`;
             saveData();
         }
 
-        /* 台灣口語風格英文拼音轉換 */
         function convertEnglishToPhonics(text) {
             if (!text) return '';
             
@@ -609,7 +701,6 @@
             });
         }
 
-        /* 播放真實「叮咚」音效 (Web Audio API) */
         function playDingDongSound(callback) {
             try {
                 if (!audioCtx) {
@@ -644,7 +735,7 @@
                 osc2.stop(now + 0.9);
 
                 if (callback) {
-                    setTimeout(callback, 750); // 確保音效完整結束後再繼續
+                    setTimeout(callback, 750);
                 }
             } catch(e) {
                 console.error("音效播放失敗，直接切換語音", e);
@@ -652,7 +743,6 @@
             }
         }
 
-        /* 優先抓取雅婷或台灣本地女聲音色 */
         function getYatingOrBestVoice() {
             if (!availableVoices || availableVoices.length === 0) {
                 if ('speechSynthesis' in window) availableVoices = window.speechSynthesis.getVoices();
@@ -681,13 +771,11 @@
             return null;
         }
 
-        /* 放入廣播佇列執行排隊 */
         function enqueueSpeech(speechText) {
             speechQueue.push(speechText);
             processSpeechQueue();
         }
 
-        /* 依序處理廣播佇列：確保前一場廣播播畢才播下一場 */
         function processSpeechQueue() {
             if (isSpeakingQueue || speechQueue.length === 0) return;
 
@@ -700,7 +788,6 @@
                 return;
             }
 
-            // 播放叮咚音效，音效結束後再唸出文字
             playDingDongSound(() => {
                 const selectedVoice = getYatingOrBestVoice();
 
@@ -714,10 +801,9 @@
                 };
 
                 const u1 = createUtterance(currentText, 1.05);
-                const u2 = createUtterance(currentText, 1.1); // 唸兩次加強清晰度
+                const u2 = createUtterance(currentText, 1.1);
 
                 u2.onend = () => {
-                    // 等待間隔一下下再處理下一個佇列
                     setTimeout(() => {
                         isSpeakingQueue = false;
                         processSpeechQueue();
@@ -787,10 +873,12 @@
             document.getElementById('pageMain').style.display = page === 'main' ? 'block' : 'none';
             document.getElementById('pageDb').style.display = page === 'db' ? 'block' : 'none';
             document.getElementById('pageHistory').style.display = page === 'history' ? 'block' : 'none';
+            document.getElementById('pageManual').style.display = page === 'manual' ? 'block' : 'none';
             
             document.getElementById('tabMainBtn').className = page === 'main' ? 'tab-btn active' : 'tab-btn';
             document.getElementById('tabDbBtn').className = page === 'db' ? 'tab-btn active' : 'tab-btn';
             document.getElementById('tabHistoryBtn').className = page === 'history' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tabManualBtn').className = page === 'manual' ? 'tab-btn active' : 'tab-btn';
 
             if (page === 'history') {
                 updateHistoryDateSelect();
@@ -804,11 +892,6 @@
             s = s.replace(/^[\.\s、\-_0-9]+/, '').trim();
             s = s.replace(/[\s\t,、]*(?:[男女]|[\d]+級)+.*$/, '').trim();
             return s;
-        }
-
-        function cleanName(raw) {
-            if (!raw) return '';
-            return raw.replace(/^[\.\s、\-_0-9]+/, '').trim();
         }
 
         function parseLevelText(text) {
@@ -1017,7 +1100,7 @@
             if (text.trim()) {
                 parseAndAddNames(text);
                 ta.value = '';
-                autoResizeTextarea(ta); // 匯入後自動收縮
+                autoResizeTextarea(ta);
                 saveData();
                 render();
             }
@@ -1162,7 +1245,6 @@
             }
         }
 
-        /* 透過佇列進行統一廣播：加入排隊序列，依序播放 */
         function speakPlayersForCourt(courtNum, playerObjects) {
             if (!playerObjects || playerObjects.length === 0) return;
 
@@ -1173,7 +1255,6 @@
             enqueueSpeech(speechText);
         }
 
-        /* 球場現況區廣播：針對該場地的球員進行廣播 */
         function announceCourt(courtNum) {
             const courtPlayers = (state.courts[courtNum] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
             if (courtPlayers.length === 0) {
@@ -1183,7 +1264,6 @@
             speakPlayersForCourt(courtNum, courtPlayers);
         }
 
-        /* 按下「上場」按鈕：移動球員 + 廣播指定場地與球員 */
         function sendPreQueueToCourt(qIndex, courtNum) {
             if ((state.preQueues[qIndex] || []).length < 4) {
                 alert("預排隊伍需滿 4 人才能上場！");
@@ -1196,10 +1276,8 @@
 
             const queuePlayers = (state.preQueues[qIndex] || []).map(id => state.players.find(p => p.id === id)).filter(Boolean);
 
-            // 1. 執行語音廣播（加入佇列排隊）
             speakPlayersForCourt(courtNum, queuePlayers);
 
-            // 2. 將球員移入目標場地，並更新狀態
             state.courts[courtNum] = [...state.preQueues[qIndex]];
             state.preQueues[qIndex].forEach(id => {
                 const p = state.players.find(x => x.id === id);
@@ -1209,7 +1287,6 @@
                 }
             });
 
-            // 3. 清空該預排隊伍
             state.preQueues[qIndex] = [];
             saveData();
             render();
@@ -1256,7 +1333,6 @@
             render();
         }
 
-        /* 每秒更新等待時間與動態分鐘數計算 */
         function updateIdleTimes() {
             const now = Date.now();
             const blueSec = (state.waitBlueMin || 4) * 60;
@@ -1402,11 +1478,15 @@
             state.players.forEach(p => {
                 if (!p.checkedIn) return;
 
+                /* 自動檢查資料庫完整性：若無姓名或等級為「?」，在主頁等待區名字顯示為橘色 */
+                const dbMatch = state.dbPlayers.find(dbP => dbP.name.toLowerCase() === p.name.toLowerCase());
+                const isDataIncomplete = !dbMatch || !p.level || p.level === '?' || p.gender === '?';
+
                 if (p.status === 'left') {
                     leftContainer.innerHTML += `
                         <div class="player-card left-away" id="playerCard-${p.id}">
                             <div class="player-name">
-                                <span class="${p.gender === '女' ? 'name-female' : (p.gender === '男' ? 'name-male' : 'name-unknown')}">${p.name}</span>
+                                <span class="${isDataIncomplete ? 'name-unknown' : (p.gender === '女' ? 'name-female' : (p.gender === '男' ? 'name-male' : 'name-unknown'))}">${p.name}</span>
                                 <button class="btn btn-secondary btn-sm" onclick="toggleLeftStatus('${p.id}')">返回</button>
                             </div>
                             <div class="player-info">暫離中</div>
@@ -1440,14 +1520,21 @@
                 }
 
                 let nameClass = 'name-male';
-                if (p.gender === '女') nameClass = 'name-female';
-                else if (p.gender === '?') nameClass = 'name-unknown';
+                if (isDataIncomplete) {
+                    nameClass = 'name-unknown';
+                } else if (p.gender === '女') {
+                    nameClass = 'name-female';
+                } else if (p.gender === '男') {
+                    nameClass = 'name-male';
+                } else {
+                    nameClass = 'name-unknown';
+                }
 
                 const cardHTML = `
                     <div class="player-card ${isHighlight ? 'highlight' : ''}" id="playerCard-${p.id}">
                         <div>
                             <div class="player-name">
-                                <span class="${nameClass}">${p.name}</span>
+                                <span class="${nameClass}">${p.name} ${isDataIncomplete ? '⚠️' : ''}</span>
                                 <span class="player-badge">${p.level || '?'}</span>
                             </div>
                             <div class="player-info">
