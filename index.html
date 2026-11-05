@@ -51,6 +51,16 @@
         }
         .app-title { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
 
+        /* 放大兩倍的「簽到管理」按鈕 */
+        .btn-settings-large {
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: white !important;
+            font-size: 0.95rem !important;
+            padding: 8px 14px !important;
+            border-radius: 8px !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        }
+
         .nav-tabs {
             display: flex;
             background: #1b5e20;
@@ -103,6 +113,21 @@
         .btn-warning { background: linear-gradient(135deg, #ff9800, #f57c00); color: white; }
         .btn-secondary { background: #e0e0e0; color: #424242; }
         .btn-sm { font-size: 0.75rem; padding: 3px 6px; }
+
+        /* 放大兩倍的「簽到與繳費明細」按鈕 */
+        .btn-manage-large {
+            font-size: 0.95rem !important;
+            padding: 10px 14px !important;
+            border-radius: 8px !important;
+            background: #dcdcdc !important;
+            color: #333333 !important;
+            border: 1px solid #bcbcbc !important;
+            width: 100%;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
         .btn-court { 
             background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; 
@@ -219,7 +244,7 @@
     <!-- Header -->
     <div class="app-header">
         <div class="app-title">🥬🏸 蔬食羽球智慧排場</div>
-        <button class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:white;" onclick="toggleInputSection()">⚙️ 簽到管理</button>
+        <button class="btn btn-settings-large" onclick="toggleInputSection()">⚙️ 簽到管理</button>
     </div>
 
     <!-- Navigation Tabs -->
@@ -270,8 +295,8 @@
                 <button class="btn btn-danger btn-sm" onclick="resetTodayData()">⚠️ 清空今日排場(獨立不影響歷史)</button>
             </div>
 
-            <!-- 明細 -->
-            <button class="btn btn-secondary btn-sm" style="width:100%; font-weight:bold; justify-content:space-between;" onclick="toggleManageTable()">
+            <!-- 明細 (已放大兩倍) -->
+            <button class="btn-manage-large" onclick="toggleManageTable()">
                 <span>👥 簽到與繳費明細</span>
                 <span id="manageTableArrow">▼</span>
             </button>
@@ -1478,7 +1503,6 @@
             state.players.forEach(p => {
                 if (!p.checkedIn) return;
 
-                /* 自動檢查資料庫完整性：若無姓名或等級為「?」，在主頁等待區名字顯示為橘色 */
                 const dbMatch = state.dbPlayers.find(dbP => dbP.name.toLowerCase() === p.name.toLowerCase());
                 const isDataIncomplete = !dbMatch || !p.level || p.level === '?' || p.gender === '?';
 
