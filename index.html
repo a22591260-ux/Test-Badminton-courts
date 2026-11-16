@@ -203,6 +203,7 @@
         .manage-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.8rem; }
         .manage-table th, .manage-table td { border-bottom: 1px solid #e8f5e9; padding: 5px 3px; text-align: left; }
         .manage-table th { color: var(--primary-green); font-weight: bold; }
+        .row-index { color: #777; font-weight: 600; margin-right: 3px; font-size: 0.75rem; }
 
         .summary-box { background: #ffffff; border: 1.5px solid #a5d6a7; border-radius: 10px; padding: 8px; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; }
         .log-list { font-size: 0.78rem; color: #444; max-height: 250px; overflow-y: auto; background: #f9fbf9; padding: 8px; border-radius: 8px; border: 1px solid #e8f5e9; }
@@ -1625,7 +1626,7 @@
 
             let currentPaidTotal = 0;
 
-            state.players.forEach(p => {
+            state.players.forEach((p, idx) => {
                 let nameClass = 'name-male';
                 if (p.gender === '女') nameClass = 'name-female';
                 else if (p.gender === '?') nameClass = 'name-unknown';
@@ -1636,7 +1637,7 @@
 
                 container.innerHTML += `
                     <tr>
-                        <td class="${nameClass}">${p.name}</td>
+                        <td class="${nameClass}"><span class="row-index">${idx + 1}.</span>${p.name}</td>
                         <td>${p.gender}</td>
                         <td>
                             <button class="btn btn-sm ${p.checkedIn ? 'btn-primary' : 'btn-secondary'}" onclick="toggleCheckIn('${p.id}')">
