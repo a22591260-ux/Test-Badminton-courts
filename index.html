@@ -264,6 +264,7 @@
                 <div style="display: flex; gap:6px; align-items:center;">
                     <label style="white-space:nowrap; font-size:0.8rem; font-weight:bold; color:var(--primary-green);">📅 日期：</label>
                     <input type="date" id="currentDateInput" style="flex:1; font-weight:bold;" onchange="saveData(); syncDailySummarySnapshot(); renderHistory();">
+                    <button type="button" class="btn btn-court btn-sm" style="width:auto; padding:5px 10px;" onclick="setTodayDate()" title="重設為今天日期">今天</button>
                 </div>
                 <div style="display: flex; gap:6px; align-items:center;">
                     <label style="white-space:nowrap; font-size:0.8rem; font-weight:bold; color:var(--primary-green);">📍 地點：</label>
@@ -573,8 +574,24 @@
     </div>
 
     <script>
+        function getTodayLocalDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function setTodayDate() {
+            const todayStr = getTodayLocalDateString();
+            document.getElementById('currentDateInput').value = todayStr;
+            saveData();
+            syncDailySummarySnapshot();
+            renderHistory();
+        }
+
         let state = {
-            currentDate: new Date().toISOString().slice(0, 10),
+            currentDate: getTodayLocalDateString(),
             location: "",
             courtCount: 3,
             courtNames: { 1: "場地 1", 2: "場地 2", 3: "場地 3", 4: "場地 4", 5: "場地 5", 6: "場地 6", 7: "場地 7", 8: "場地 8" },
@@ -597,14 +614,15 @@
         let isSpeakingQueue = false;
 
         window.onload = function() {
+            const todayStr = getTodayLocalDateString();
             loadData();
-            if (!state.currentDate) {
-                state.currentDate = new Date().toISOString().slice(0, 10);
-            }
+            // 每次開啟網頁都自動抓取當天日期，並同步更新 state 與畫面
+            state.currentDate = todayStr;
             if (!state.dailySummaries) {
                 state.dailySummaries = {};
             }
-            document.getElementById('currentDateInput').value = state.currentDate;
+            document.getElementById('currentDateInput').value = todayStr;
+            saveData();
             setInterval(updateIdleTimes, 1000);
             
             initSpeechVoices();
@@ -770,34 +788,6 @@
             }
         }
 
-        function getYatingOrBestVoice() {
-            if (!availableVoices || availableVoices.length === 0) {
-                if ('speechSynthesis' in window) availableVoices = window.speechSynthesis.getVoices();
-            }
-
-            const yatingVoice = availableVoices.find(v => 
-                v.name.includes('Yating') || v.name.includes('雅婷') || v.name.includes('Mei-Jia') || v.name.includes('MeiJia') || v.name.includes('美佳')
-            );
-            if (yatingVoice) return yatingVoice;
-
-            const twVoices = availableVoices.filter(v => v.lang === 'zh-TW' || v.lang === 'zh_TW' || v.lang.startsWith('zh-TW'));
-
-            if (twVoices.length > 0) {
-                const femaleVoice = twVoices.find(v => 
-                    v.name.toLowerCase().includes('female') || 
-                    v.name.includes('HsiaoChen') || 
-                    v.name.includes('Hanhan') || 
-                    v.name.includes('Xiaoxiao') ||
-                    v.name.includes('Natural')
-                );
-                if (femaleVoice) return femaleVoice;
-
-                return twVoices[0];
-            }
-
-            return null;
-        }
-
         function enqueueSpeech(speechText) {
             speechQueue.push(speechText);
             processSpeechQueue();
@@ -816,19 +806,21 @@
             }
 
             playDingDongSound(() => {
-                const selectedVoice = getYatingOrBestVoice();
+                const u1 = new SpeechSynthesisUtterance(currentText);
+                u1.lang = 'zh-TW';
+                u1.rate = 0.95;
 
-                const createUtterance = (text, pitchVal) => {
-                    const u = new SpeechSynthesisUtterance(text);
-                    u.lang = 'zh-TW';
-                    u.rate = 0.95;
-                    u.pitch = pitchVal;
-                    if (selectedVoice) u.voice = selectedVoice;
-                    return u;
-                };
+                const u2 = new SpeechSynthesisUtterance(currentText);
+                u2.lang = 'zh-TW';
+                u2.rate = 0.95;
 
-                const u1 = createUtterance(currentText, 1.05);
-                const u2 = createUtterance(currentText, 1.1);
+                if (availableVoices && availableVoices.length > 0) {
+                    const twVoice = availableVoices.find(v => v.lang === 'zh-TW' || v.lang === 'zh_TW' || v.lang.startsWith('zh-TW'));
+                    if (twVoice) {
+                        u1.voice = twVoice;
+                        u2.voice = twVoice;
+                    }
+                }
 
                 u2.onend = () => {
                     setTimeout(() => {
@@ -848,7 +840,7 @@
         }
 
         function saveData() {
-            state.currentDate = document.getElementById('currentDateInput').value;
+            state.currentDate = document.getElementById('currentDateInput').value || getTodayLocalDateString();
             state.location = document.getElementById('locationInput').value;
             state.feePerPerson = parseInt(document.getElementById('feePerPerson').value) || 0;
             syncDailySummarySnapshot();
@@ -1009,7 +1001,7 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            const todayStr = new Date().toISOString().slice(0, 10);
+            const todayStr = getTodayLocalDateString();
             link.setAttribute("download", `badminton_players_db_${todayStr}.csv`);
             document.body.appendChild(link);
             link.click();
@@ -1337,7 +1329,7 @@
             const playerObjects = courtPlayers.map(id => state.players.find(p => p.id === id)).filter(Boolean);
             const names = playerObjects.map(p => p.name).join('、');
 
-            const dateStr = document.getElementById('currentDateInput').value || new Date().toISOString().slice(0, 10);
+            const dateStr = document.getElementById('currentDateInput').value || getTodayLocalDateString();
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             state.logs.unshift({
@@ -1754,6 +1746,7 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
+            const todayStr = getTodayLocalDateString();
             link.setAttribute("download", `badminton_history_${selectedDate}.csv`);
             document.body.appendChild(link);
             link.click();
